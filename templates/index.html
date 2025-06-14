@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-precomposed.png">
+
+  <!-- Wymagane przez iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Piotrflix">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#000000">
+
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#000000">
+
+  <meta charset="UTF-8">
+  <title>Piotrflix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+  :root {
+    --bg-dark: #121212;
+    --bg-light: #f5f5f5;
+    --card-bg-dark: #1e1e1e;
+    --card-bg-light: #ffffff;
+    --color-dark: #ffffff;
+    --color-light: #000000;
+    --accent: #c60000;
+  }
+
+  body[data-theme="dark"] {
+    background-color: var(--bg-dark);
+    color: var(--color-dark);
+  }
+
+  body[data-theme="light"] {
+    background-color: var(--bg-light);
+    color: var(--color-light);
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    scroll-behavior: smooth;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 2rem;
+    padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom)));
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  button {
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background: #830000;
+  }
+
+  .series-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+.torrent-details {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin: 0.3rem 0;
+}
+
+
+.series-header {
+  display: flex;
+  gap: 1rem;
+  cursor: pointer;
+  align-items: center;
+}
+
+.series-header img {
+  width: 70px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.series-info {
+  flex: 1; /* ✅ To klucz! */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.series-info span {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.series-seasons {
+  margin-top: 0.8rem;
+  padding-left: 2rem;
+}
+
+.series-seasons details {
+  margin-bottom: 0.6rem;
+  background: rgba(255,255,255,0.03);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+}
+
+.series-seasons summary {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.series-seasons ul {
+  padding-left: 1.2rem;
+  margin: 0.5rem 0 0;
+}
+
+.series-seasons li {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: #ccc;
+}
+.torrent, .search-result, .browse-result {
+  background: var(--card-bg-dark);
+      color: var(--color-dark);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      max-width: 100%;
+      display: flex;
+      gap: 1rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+  .available-tab-content {
+    display: none;
+  }
+  .available-tab-content.active {
+    display: block;
+  }
+
+   .search-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--card-bg-dark);
+}
+
+.search-tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  background-color: transparent;
+  color: inherit;
+  flex: 1 1 auto;
+  text-align: center;
+  border-bottom: 2px solid transparent;
+}
+
+.search-tab.active {
+  background-color: var(--accent);
+  color: white;
+  border-bottom: 2px solid white;
+}
+
+body[data-theme="light"] .search-tabs {
+  background: var(--card-bg-light);
+}
+
+body[data-theme="light"] .search-tab.active {
+  border-bottom-color: var(--color-light);
+}
+
+
+body[data-theme="light"] .search-tab {
+  background-color: var(--card-bg-light);
+  color: var(--color-light);
+}
+
+.search-tab.active {
+  background-color: var(--accent);
+  color: white;
+}
+
+
+    #browse-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 48%; /* dwie kolumny na desktopie */
+  min-width: 160px;
+}
+
+@media (max-width: 600px) {
+  .filter-group {
+    flex: 1 1 100%; /* jedna kolumna na małych ekranach */
+  }
+}
+
+.filter-group label {
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+
+    .theme-toggle-container {
+  position: fixed;
+  bottom: 7rem;
+  right: 1rem;
+  z-index: 999;
+}
+
+    .switch-label.small {
+  font-size: 0.8rem;
+  gap: 0.3rem;
+  margin: 0.5rem 0;
+}
+
+.switch-label.small .switch-slider {
+  width: 36px;
+  height: 18px;
+}
+
+.switch-label.small .switch-slider::before {
+  height: 14px;
+  width: 14px;
+  top: 2px;
+  left: 2px;
+}
+
+.switch-label.small .switch-input:checked + .switch-slider::before {
+  transform: translateX(18px);
+}
+
+
+    .switch-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  background-color: #ccc;
+  border-radius: 50px;
+  transition: background-color 0.3s;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  top: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.switch-input:checked + .switch-slider {
+  background-color: var(--accent);
+}
+
+.switch-input:checked + .switch-slider::before {
+  transform: translateX(24px);
+}
+
+
+    .logo-container {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.logo-img {
+  max-width: 100%;
+  height: auto;
+  width: 250px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 500px) {
+  .logo-img {
+    width: 180px;
+  }
+}
+
+    .torrent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.torrent-info {
+  flex: 1;
+  min-width: 60%;
+}
+
+
+.reset-btn {
+  font-size: 12px;
+  padding: 4px 4px;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+  height: 22px;
+  white-space: nowrap;
+  display: inline-block;
+  text-align: center;
+  margin-left: 8px;
+  min-width: unset;
+  width: auto;
+}
+
+.reset-btn:hover {
+  background-color: #219150;
+}
+
+
+.torrent-name {
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+.torrent-details {
+  font-size: 0.9rem;
+  color: gray;
+  margin-top: 0.4rem;
+}
+
+.progress-bar {
+  background: #444;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 12px;
+  width: 100%;
+}
+
+.progress-bar-inner {
+  background: var(--accent);
+  height: 100%;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+
+    body[data-theme="light"] .torrent,
+    body[data-theme="light"] .search-result,
+    body[data-theme="light"] .browse-result {
+      background: var(--card-bg-light);
+      color: var(--color-light);
+    }
+
+    .search-result img, .browse-result img {
+      width: 100px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    .result-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .torrent-buttons-row button {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  width: auto !important; /* ⬅️ nadpisuje width: 100% z ogólnego button */
+}
+
+
+.torrent-buttons-row button {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  min-width: unset;
+  white-space: nowrap;
+}
+
+
+.progress-bar {
+  background: #333;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 12px;
+}
+
+.progress-bar-inner {
+  background: var(--accent);
+  height: 100%;
+  min-width: 2%; /* ✅ będzie zawsze widoczny nawet przy 0% */
+  transition: width 0.5s ease;
+}
+
+    .torrent-buttons button {
+  flex: 1;
+  margin: 0.2rem;
+  font-size: 0.9rem;
+}
+
+    #nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: var(--card-bg-dark);
+      display: flex;
+      justify-content: space-around;
+      padding: 0.7rem 0;
+      z-index: 999;
+      transition: background-color 0.3s;
+    }
+
+    body[data-theme="light"] #nav {
+      background-color: var(--card-bg-light);
+    }
+
+    #nav button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: inherit;
+      transition: color 0.3s;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .torrent-title {
+  font-size: clamp(0.9rem, 3.8vw, 1rem);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.3;
+  margin: 0; /* usuwa domyślny margines <h3> */
+}
+
+
+    .section.active {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    #browse-filters select {
+      width: 49%;
+      display: inline-block;
+      margin: 0.5% 0;
+    }
+
+    #browse-pagination {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    #quality-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #quality-modal .modal-content {
+      background: var(--card-bg-dark);
+      color: var(--color-dark);
+      padding: 1.5rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 320px;
+      text-align: center;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    {
+
+    .series-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .series-card summary {
+      list-style: none;
+    }
+
+    /* === SERIES HEADER === */
+    .series-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      flex-wrap: wrap;
+    }
+
+    .series-header img {
+      width: 70px;
+      height: auto;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .series-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0; /* 📏 kluczowe do skracania tekstu */
+    }
+
+    .series-info h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .series-info span {
+      font-size: 0.9rem;
+      color: #ccc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .series-info .progress-bar {
+      background: #333;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 10px;
+      width: 100%;
+      margin: 0.3rem 0;
+    }
+
+    .series-info .progress-fill {
+      background: var(--accent, #c60000);
+      height: 100%;
+      transition: width 0.4s;
+    }
+
+    /* === SEASONS === */
+    .series-seasons {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+    }
+
+    .series-seasons details {
+      margin-bottom: 0.6rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+    }
+
+    .series-seasons summary {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .series-seasons ul {
+      padding-left: 1rem;
+      margin: 0.4rem 0;
+    }
+
+    .series-seasons li {
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      color: #ccc;
+    }
+
+    /* === SEARCH/BROWSE RESULTS === */
+    #search-results {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .search-result, .browse-result {
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg-dark);
+      color: var(--color-dark);
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 1rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .search-result img, .browse-result img {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .search-result .result-content, .browse-result .result-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      margin-top: 0.5rem;
+    }
+
+    .search-result .result-content div,
+    .browse-result .result-content div {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0.5rem 0;
+    }
+
+    .search-result button,
+    .browse-result button {
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: 200px;
+      margin-top: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      align-self: flex-start;
+    }
+
+    @media (max-width: 600px) {
+      .search-result, .browse-result {
+        font-size: 0.9rem;
+      }
+    }
+
+    }
+
+.torrent-name,
+.search-result .result-content b,
+.browse-result .result-content b {
+  font-size: clamp(0.9rem, 3.5vw, 1rem);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.3;
+  max-width: 100%;
+  display: block;
+}
+
+.search-result .result-content > div:first-child,
+.browse-result .result-content > div:first-child {
+  flex-wrap: wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: flex;
+  gap: 0.3rem;
+}
+
+
+  </style>
+</head>
+
+<body data-theme="dark">
+
+  <div class="container">
+    <div class="logo-container">
+      <div class="theme-toggle-container">
+  <label class="switch-label small">
+    <input type="checkbox" id="theme-toggle" class="switch-input">
+    <span class="switch-slider"></span>
+  </label>
+</div>
+
+  <img src="static/logo.png" alt="PiotrFlix logo" class="logo-img">
+
+</div>
+
+
+    <!-- Torrenty -->
+    <div id="section-torrents" class="section active">
+      <label for="sort">Sortuj:</label>
+      <select id="sort" onchange="loadTorrents()">
+        <option value="name">Nazwa</option>
+        <option value="progress">Postęp</option>
+        <option value="state">Stan</option>
+      </select>
+      <label for="global-speed-limit">🌐 Ogranicz prędkość pobierania:</label>
+<select id="global-speed-limit">
+  <option value="0">Unlimited</option>
+  <option value="1">1 MB/s</option>
+  <option value="2">2 MB/s</option>
+  <option value="5">5 MB/s</option>
+  <option value="10">10 MB/s</option>
+  <option value="15">15 MB/s</option>
+</select>
+
+      <div id="summary" style="margin: 1rem 0; font-weight: bold;"></div>
+      <div class="search-tabs" id="torrent-tabs" style="margin-bottom: 1rem;">
+  <button class="search-tab active" data-torrent-tab="active">⚡ AKTYWNE</button>
+  <button class="search-tab" data-torrent-tab="history">📁 HISTORIA</button>
+</div>
+      <div id="torrents"></div>
+    </div>
+
+<!-- Dostępne -->
+<div id="section-available" class="section">
+  <div class="search-tabs" id="available-tabs" style="margin-bottom: 1rem;">
+    <button class="search-tab active" data-available-tab="films">🎬 Dostępne filmy</button>
+    <button class="search-tab" data-available-tab="series">📺 Dostępne seriale</button>
+  </div>
+
+  <!-- Loader -->
+  <div id="loading-message" style="text-align:center; margin: 20px; display: none;">
+    <strong>⏳ Proszę czekać, trwa ładowanie...</strong>
+  </div>
+
+  <!-- Filmy i seriale -->
+  <div id="available-films" class="available-tab-content"></div>
+  <div id="available-series" class="available-tab-content">
+  <div id="plex-series"></div>
+</div>
+</div>
+
+
+<!-- Szukaj -->
+<div id="section-search" class="section">
+  <div id="search-tabs" class="search-tabs" style="margin-bottom: 1rem;">
+  <button data-type="movies" class="search-tab active">🎬 Filmy</button>
+    <button data-type="premium" class="search-tab">💎 Filmy+</button>
+  <button data-type="series" class="search-tab">📺 Seriale</button>
+</div>
+
+  <input type="text" id="search-query" placeholder="Szukaj tytułu" />
+
+  <label for="quality">Jakość:</label>
+  <select id="quality">
+    <option value="">Wszystkie</option>
+    <option value="720p">720p</option>
+    <option value="1080p" selected>1080p</option>
+    <option value="2160p">2160p</option>
+  </select>
+
+  <button id="search-button">🔍 Szukaj</button>
+
+  <div id="search-status"></div>
+  <div id="search-results"></div>
+</div>
+
+
+    <!-- Przeglądaj -->
+    <div id="section-browse" class="section">
+      <div id="browse-filters">
+  <div class="filter-group">
+    <label for="browse-quality">🎥 Jakość:</label>
+    <select id="browse-quality">
+      <option value="0">All</option>
+      <option value="480p">480p</option>
+      <option value="720p">720p</option>
+      <option value="1080p">1080p</option>
+      <option value="1080p.x265">1080p.x265</option>
+      <option value="2160p">2160p</option>
+      <option value="3D">3D</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="browse-genre">🎭 Gatunek:</label>
+    <select id="browse-genre">
+      <option value="0">All</option>
+      <option value="Action">Action</option>
+      <option value="Adventure">Adventure</option>
+      <option value="Animation">Animation</option>
+      <option value="Biography">Biography</option>
+      <option value="Comedy">Comedy</option>
+      <option value="Crime">Crime</option>
+      <option value="Documentary">Documentary</option>
+      <option value="Drama">Drama</option>
+      <option value="Family">Family</option>
+      <option value="Fantasy">Fantasy</option>
+      <option value="Film-Noir">Film-Noir</option>
+      <option value="Game-Show">Game-Show</option>
+      <option value="History">History</option>
+      <option value="Horror">Horror</option>
+      <option value="Music">Music</option>
+      <option value="Musical">Musical</option>
+      <option value="Mystery">Mystery</option>
+      <option value="News">News</option>
+      <option value="Reality-TV">Reality-TV</option>
+      <option value="Romance">Romance</option>
+      <option value="Sci-Fi">Sci-Fi</option>
+      <option value="Sport">Sport</option>
+      <option value="Talk-Show">Talk-Show</option>
+      <option value="Thriller">Thriller</option>
+      <option value="War">War</option>
+      <option value="Western">Western</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="browse-rating">⭐ Ocena IMDb:</label>
+    <select id="browse-rating">
+      <option value="0">All</option>
+      <option value="9">9+</option>
+      <option value="8">8+</option>
+      <option value="7">7+</option>
+      <option value="6">6+</option>
+      <option value="5">5+</option>
+      <option value="4">4+</option>
+      <option value="3">3+</option>
+      <option value="2">2+</option>
+      <option value="1">1+</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="browse-year">📅 Rok produkcji:</label>
+    <select id="browse-year">
+      <option value="0">All</option>
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2020-now">2020-now</option>
+      <option value="2010-now">2010-now</option>
+      <option value="2010-2019">2010-2019</option>
+      <option value="2000-2009">2000-2009</option>
+      <option value="1990-1999">1990-1999</option>
+      <option value="1980-1989">1980-1989</option>
+      <option value="1970-1979">1970-1979</option>
+      <option value="1950-1969">1950-1969</option>
+      <option value="1900-1949">1900-1949</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="browse-order">🔃 Sortuj wg:</label>
+    <select id="browse-order">
+      <option value="latest">Latest</option>
+      <option value="oldest">Oldest</option>
+      <option value="featured">Featured</option>
+      <option value="seeds">Seeds</option>
+      <option value="peers">Peers</option>
+      <option value="year">Year</option>
+      <option value="rating">IMDb Rating</option>
+      <option value="likes">YTS Likes</option>
+      <option value="rt_audience">RT Audience</option>
+      <option value="alphabetical">Alphabetical</option>
+      <option value="downloads">Downloads</option>
+    </select>
+  </div>
+
+      </div>
+      <button onclick="browseMovies()">📂 Przeglądaj</button>
+      <div id="browse-status"></div>
+      <div id="browse-results"></div>
+      <div id="browse-pagination"></div>
+    </div>
+  </div>
+
+  <!-- Nawigacja -->
+  <div id="nav">
+    <button onclick="showSection('torrents')">🎞️ Torrenty</button>
+    <button onclick="showSection('search')">🔍 Szukaj</button>
+    <button onclick="showSection('browse')">📂 Przeglądaj</button>
+    <button onclick="showSection('available')">✅ Dostępne</button>
+  </div>
+  <div id="quality-modal">
+    <div class="modal-content">
+      <h3>Wybierz jakość</h3>
+      <select id="modal-quality">
+        <option value="2160p">2160p</option>
+        <option value="1080p" selected>1080p</option>
+        <option value="720p">720p</option>
+      </select>
+      <button onclick="confirmQuality()">🎯 Pobierz</button>
+      <button onclick="closeModal()" style="margin-top:0.5rem;">❌ Anuluj</button>
+    </div>
+  </div>
+
+  <!-- Toast powiadomienie -->
+<div id="toast" style="
+  display: none;
+  position: fixed;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #323232;
+  color: #fff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 9999;
+  font-size: 0.95rem;
+">
+  ✅ Torrent dodany
+</div>
+
+  <!-- Potwierdzenie usunięcia -->
+<div id="confirm-modal" class="modal hidden">
+  <div class="modal-content">
+    <p id="confirm-message">Czy na pewno chcesz usunąć?</p>
+    <div class="modal-buttons">
+      <button id="confirm-yes">✅ Tak</button>
+      <button id="confirm-no">❌ Nie</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Skrypty -->
+<script>
+  let activeTorrentView = "active";
+document.addEventListener("DOMContentLoaded", () => {
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('change', function () {
+      document.body.setAttribute('data-theme', this.checked ? 'light' : 'dark');
+    });
+  }
+
+  const searchResultsCache = {
+    movies: null,
+    premium: null,
+    series: null
+  };
+
+  let pendingMagnetUrl = null;
+  let activeSearchTab = "movies";
+
+  document.querySelectorAll(".search-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".search-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeSearchTab = tab.getAttribute("data-type");
+
+      const cached = searchResultsCache[activeSearchTab];
+      if (cached) {
+        renderResults(cached);
+      } else {
+        document.getElementById("search-results").innerHTML = "";
+        document.getElementById("search-status").innerText = "";
+      }
+    });
+  });
+
+  const searchBtn = document.getElementById("search-button");
+  if (searchBtn) {
+    searchBtn.addEventListener("click", searchContent);
+  }
+
+  const modeToggle = document.getElementById("search-mode");
+  const modeLabel = document.getElementById("search-mode-label");
+  if (modeToggle && modeLabel) {
+    modeToggle.addEventListener("change", () => {
+      modeLabel.innerText = modeToggle.checked ? "📺 Seriale" : "🎬 Filmy";
+    });
+  }
+
+  window.showSection = function (name) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    const section = document.getElementById(`section-${name}`);
+    if (section) section.classList.add("active");
+  };
+
+  window.browseMovies = browseMovies;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.toggle = toggle;
+  window.removeTorrent = removeTorrent;
+  window.confirmQuality = confirmQuality;
+  window.downloadFromResult = downloadFromResult;
+  window.searchContent = searchContent;
+  loadPlexFilms(); // domyślnie załaduj filmy
+  document.querySelector("[data-available-tab='films']").click();
+  if (name === "available") {
+  // ustaw domyślną zakładkę na filmy
+  document.querySelectorAll("#available-tabs .search-tab").forEach(t => t.classList.remove("active"));
+  document.querySelector("[data-available-tab='films']").classList.add("active");
+
+  document.querySelectorAll(".available-tab-content").forEach(s => s.classList.remove("active"));
+  document.getElementById("available-films").classList.add("active");
+
+  loadPlexFilms();
+}
+
+
+  loadTorrents();
+  setInterval(loadTorrents, 2000);
+  document.querySelectorAll("#torrent-tabs .search-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#torrent-tabs .search-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeTorrentView = tab.dataset.torrentTab;
+      loadTorrents();
+    });
+  });
+
+
+  function formatSpeed(bps) {
+    const kbps = bps / 1024;
+    return kbps >= 1024 ? (kbps / 1024).toFixed(2) + " MB/s" : kbps.toFixed(2) + " KB/s";
+  }
+
+  function formatETA(seconds) {
+    if (!seconds || seconds <= 0) return "–";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  }
+
+  function animateProgressBar(el, progress) {
+    const percent = Math.max(progress, 0.1);
+    el.style.width = percent.toFixed(1) + "%";
+  }
+
+async function loadTorrents() {
+  const res = await fetch("/status");
+  const data = await res.json();
+  const container = document.getElementById("torrents");
+  const summary = document.getElementById("summary");
+  if (!container || !summary) return;
+
+  container.innerHTML = "";
+  const torrentsArray = Object.entries(data);
+  const sortKey = document.getElementById("sort").value;
+
+  torrentsArray.sort((a, b) => {
+    const valA = a[1][sortKey], valB = b[1][sortKey];
+    return typeof valA === "string" ? valA.localeCompare(valB) : valA - valB;
+  });
+
+  let totalSpeed = 0, activeCount = 0;
+
+  for (const [id, t] of torrentsArray) {
+    const isDone = t.progress >= 100;
+    if ((activeTorrentView === "active" && isDone) || (activeTorrentView === "history" && !isDone)) continue;
+
+    totalSpeed += t.download_payload_rate;
+    if (t.state === "Downloading") activeCount++;
+
+    const div = document.createElement("div");
+    div.className = "torrent";
+    div.innerHTML = `
+      <div class="torrent-info" style="position: relative;">
+        <div class="torrent-name"><b>${t.name}</b></div>
+        <div class="torrent-details">📥 ${formatSpeed(t.download_payload_rate)} – ${t.state}</div>
+        <div class="progress-bar"><div class="progress-bar-inner" style="width: 0%;"></div></div>
+        <div class="torrent-buttons-row">
+          <button onclick="toggle('${id}')">${t.state === "Paused" ? "▶️" : "⏸️"}</button>
+          <button onclick="removeTorrent('${id}', false)">🗑️</button>
+          <button onclick="removeTorrent('${id}', true)">🗑️ +📁 Usuń dane</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+    animateProgressBar(div.querySelector(".progress-bar-inner"), t.progress);
+  }
+
+  summary.innerText = `📊 Torrenty: ${torrentsArray.length}, 🚀 Aktywne: ${activeCount}, ⚡️ Prędkość: ${formatSpeed(totalSpeed)}`;
+}
+
+
+  async function toggle(id) {
+    await fetch(`/toggle/${id}`, {method: "POST"});
+    loadTorrents();
+  }
+
+  async function removeTorrent(id, withData = false) {
+    await fetch(`/remove/${id}?data=${withData}`, {method: "POST"});
+    loadTorrents();
+  }
+
+  function openModal(url) {
+    pendingMagnetUrl = url;
+    document.getElementById("quality-modal").style.display = "flex";
+  }
+
+  function closeModal() {
+    document.getElementById("quality-modal").style.display = "none";
+    pendingMagnetUrl = null;
+  }
+
+  async function confirmQuality() {
+    const quality = document.getElementById("modal-quality").value;
+    if (!pendingMagnetUrl) return;
+
+    const url = pendingMagnetUrl;
+    closeModal();
+    pendingMagnetUrl = null;
+
+    (async () => {
+      try {
+        const res = await fetch("/yts", {
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+          body: `yts_url=${encodeURIComponent(url)}&quality=${encodeURIComponent(quality)}`
+        });
+
+        const data = await res.json();
+        if (!data.magnet) {
+          console.warn("❌ Magnet link nie znaleziony dla:", url);
+          return;
+        }
+
+        await fetch("/", {
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+          body: `magnet=${encodeURIComponent(data.magnet)}&source=movies`
+        });
+
+        showToast("✅ Torrent dodany");
+      } catch (e) {
+        console.error("❌ Błąd pobierania magnet linku:", e);
+      }
+    })();
+  }
+
+  async function downloadFromResult(input) {
+    if (input.startsWith("magnet:")) {
+      await fetch("/", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: `magnet=${encodeURIComponent(input)}&source=${activeSearchTab}`
+      });
+      showToast("✅ Torrent dodany");
+    } else {
+      openModal(input);
+    }
+  }
+
+  async function searchContent() {
+    let endpoint = "/search";
+    if (activeSearchTab === "series") endpoint = "/search-series";
+    else if (activeSearchTab === "anime") endpoint = "/search-anime";
+    else if (activeSearchTab === "premium") endpoint = "/search-premium";
+
+    const query = document.getElementById("search-query").value;
+    const quality = document.getElementById("quality").value;
+    const status = document.getElementById("search-status");
+    const container = document.getElementById("search-results");
+
+    status.innerText = "🔄 Trwa wyszukiwanie...";
+    container.innerHTML = "";
+
+    try {
+      const body = `query=${encodeURIComponent(query)}&quality=${encodeURIComponent(quality)}`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body
+      });
+
+      const data = await res.json();
+      status.innerText = "";
+
+      if (!data.results || !data.results.length) {
+        status.innerText = "❌ Nic nie znaleziono.";
+        return;
+      }
+
+      if (data.source === "tpb") {
+        renderTPBResults(data.results);
+      } else {
+        renderResults(data.results);
+      }
+
+    } catch (e) {
+      console.error("❌ Błąd:", e);
+      status.innerText = "❌ Błąd podczas wyszukiwania.";
+    }
+  }
+
+  async function browseMovies(page = 1) {
+    const quality = document.getElementById("browse-quality").value || "0";
+    const genre = document.getElementById("browse-genre").value || "0";
+    const rating = document.getElementById("browse-rating").value || "0";
+    const year = parseYear(document.getElementById("browse-year").value);
+    const order = document.getElementById("browse-order").value || "latest";
+
+    const params = new URLSearchParams({
+      quality, genre, rating, year, order, page,
+      language: "0", sort_by: "0"
+    });
+
+    const status = document.getElementById("browse-status");
+    const container = document.getElementById("browse-results");
+    const pagination = document.getElementById("browse-pagination");
+
+    status.innerText = "🔄 Ładowanie...";
+    container.innerHTML = "";
+    pagination.innerHTML = "";
+
+    try {
+      const res = await fetch(`/browse?${params}`);
+      const data = await res.json();
+      status.innerText = "";
+
+      if (!data.results.length) {
+        status.innerText = "❌ Brak wyników.";
+        return;
+      }
+
+      data.results.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "browse-result";
+        div.innerHTML = `
+          <img src="${r.image}">
+          <div class="result-content">
+            <div style="display: flex; justify-content: space-between;">
+              <b>${r.title}</b><span>⭐ ${r.rating || "–"}</span>
+            </div>
+            <div>${r.description || "Brak opisu"}</div>
+            <button onclick="openModal('${r.url}')">🎯 Pobierz</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      pagination.innerHTML = `
+        <button onclick="browseMovies(${parseInt(page) - 1})" ${page <= 1 ? "disabled" : ""}>⬅️</button>
+        <span>Strona ${page}</span>
+        <button onclick="browseMovies(${parseInt(page) + 1})">➡️</button>
+      `;
+
+    } catch {
+      status.innerText = "❌ Błąd podczas ładowania.";
+    }
+  }
+
+  function parseYear(val) {
+    if (!val || val === "") return "0";
+    if (/^\d{4}$/.test(val)) return val;
+    if (val === "2020-now") return "2020";
+    if (val === "2010-now") return "2010";
+    return "0";
+  }
+
+  function renderResults(results) {
+    const container = document.getElementById("search-results");
+    searchResultsCache[activeSearchTab] = results;
+    container.innerHTML = "";
+
+    results.forEach(r => {
+      const div = document.createElement("div");
+      div.className = "search-result";
+      div.innerHTML = `
+        <img src="${r.image || 'https://via.placeholder.com/100x150?text=Brak'}">
+        <div class="result-content">
+          <div style="display: flex; justify-content: space-between;">
+            <b>${r.title}</b><span>⭐ ${r.rating || "–"}</span>
+          </div>
+          <div>${r.description || "Brak opisu"}</div>
+          <button onclick="downloadFromResult('${r.url || r.magnet}')">🎯 Pobierz</button>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function renderTPBResults(results) {
+  const container = document.getElementById("search-results");
+  searchResultsCache[activeSearchTab] = results;
+  container.innerHTML = "";
+
+  results.forEach(r => {
+    const imageUrl = (!r.image || r.image.includes("/static/logo.png"))
+            ? "https://via.placeholder.com/100x150?text=Brak"
+            : r.image;
+
+    const div = document.createElement("div");
+    div.className = "search-result";
+    div.innerHTML = `
+      <img src="${imageUrl}" />
+      <div class="result-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="torrent-title">${r.title || 'Brak tytułu'}</h3>
+          <span>⭐ ${r.rating || "–"}</span>
+        </div>
+        <div>${r.description || r.size || "Nieznany rozmiar"} – Seeds: ${r.seeds || "?"} – Leeches: ${r.leeches || "?"}</div>
+        <button onclick="downloadFromResult('${r.magnet || ''}')">🎯 Pobierz</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+
+  function showToast(message = "✅ Torrent dodany") {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+
+    toast.innerText = message;
+    toast.style.display = "block";
+    requestAnimationFrame(() => {
+      toast.style.opacity = "1";
+    });
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 300);
+    }, 2000);
+  }
+})
+
+  async function fetchTorrentStatus() {
+    try {
+      const res = await fetch("/status");
+      const data = await res.json();
+      if (data.error) {
+        console.error("Błąd statusu:", data.error);
+        return;
+      }
+
+      const list = document.getElementById("torrent-list");
+      list.innerHTML = ""; // Wyczyść poprzednie dane
+
+        Object.entries(data).forEach(([tid, t]) => {
+            const div = document.createElement("div");
+            div.className = "torrent-entry";
+            div.innerHTML = `
+                <h3>${t.name}</h3>
+                <p>Postęp pobierania: ${t.progress.toFixed(1)}%</p>
+                <p>Status: ${t.state}</p>
+                <p>Szybkość: ${(t.download_payload_rate / 1024).toFixed(1)} KB/s</p>
+                <p>ETA: ${t.eta} s</p>
+                <p>📺 Postęp oglądania: ${t.viewing_progress}%</p>
+            `;
+            list.appendChild(div);
+        });
+
+    } catch (err) {
+        console.error("❌ Błąd połączenia:", err);
+    }
+}
+
+// Odświeżaj co 10 sekund
+setInterval(fetchTorrentStatus, 10000);
+fetchTorrentStatus(); // Pierwsze wywołanie od razu
+
+  document.querySelectorAll('.speed-limit').forEach(select => {
+  select.addEventListener('change', () => {
+    const id = select.dataset.id;
+    const limit = select.value;
+    fetch(`/limit/${id}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ limit })
+    }).then(res => res.json()).then(console.log);
+  });
+});
+
+  document.getElementById("global-speed-limit").addEventListener("change", function () {
+  const limit = this.value;
+  fetch("/set-global-limit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ limit })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === "ok") {
+        alert(`✅ Ograniczono do ${limit > 0 ? limit + " MB/s" : "brak limitu"}`);
+      } else {
+        alert("❌ Błąd ustawiania limitu");
+      }
+    });
+});
+
+  document.querySelectorAll("#available-tabs .search-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll("#available-tabs .search-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+
+    const type = tab.dataset.availableTab;
+    document.querySelectorAll(".available-tab-content").forEach(s => s.classList.remove("active"));
+    document.getElementById(`available-${type}`).classList.add("active");
+
+    if (type === "films") loadPlexFilms();
+    if (type === "series") loadPlexSeries();
+  });
+});
+
+function getCountdown(targetTime) {
+  const now = Date.now();
+  const diff = targetTime - now;
+
+  if (diff <= 0) return "✅ Do usunięcia";
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  if (days > 0) return `⏳ ${days}d ${hours}h`;
+  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
+  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
+  return `⏳ ${seconds}s`;
+}
+
+
+async function loadPlexFilms() {
+  const loader = document.getElementById("loading-message");
+  const container = document.getElementById("available-films");
+
+  loader.style.display = "block";
+  container.innerHTML = "";
+
+  try {
+    const res = await fetch("/plex/films");
+    const data = await res.json();
+    loader.style.display = "none";
+
+    data.forEach(film => {
+      const div = document.createElement("div");
+      div.className = "browse-result";
+
+      const watchedAt = film.watchedAt ? new Date(film.watchedAt).getTime() : null;
+      const expiresAt = film.deleteAt || (watchedAt ? watchedAt + 7 * 86400000 : null);
+      const countdown = film.deleteAt ? getCountdown(film.deleteAt) : "–";
+
+      div.innerHTML = `
+        <img src="${film.thumb || 'https://via.placeholder.com/100x150'}" />
+        <div class="result-content">
+          <b>${film.title}</b>
+          <div class="progress-bar">
+            <div class="progress-bar-inner" style="width: ${film.progress}%; background: yellow;"></div>
+          </div>
+          <small>${film.progress}% obejrzane</small>
+
+          <div style="margin-top: 0.5rem; text-align: right;">
+            <div style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <span data-timer="${film.id}">${countdown}</span>
+              ${film.deleteAt ? `<button class="reset-btn" onclick="resetDeleteTimer('${film.id}')">🔁 Resetuj</button>` : ""}
+            </div>
+            <button onclick="confirmDelete('${film.id}', '${film.title}', 'film')">🗑️ Usuń teraz</button>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    loader.innerHTML = "❌ Błąd ładowania filmów.";
+    console.error(err);
+  }
+}
+
+
+function getCountdown(targetTime) {
+  const now = Date.now();
+  const diff = targetTime - now;
+  if (diff <= 0) return "✅ Do usunięcia";
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  if (days > 0) return `⏳ ${days}d ${hours}h`;
+  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
+  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
+  return `⏳ ${seconds}s`;
+}
+
+async function deletePlexItem(item) {
+  const confirmed = confirm(`⚠️ Czy na pewno chcesz trwale usunąć "${item.title}" z Plex i dysku?`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch("/plex/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: item.id,
+        title: item.title,
+        path: item.path,
+        type: item.type
+      })
+    });
+
+    const result = await res.json();
+
+    if (res.ok && result.success) {
+      alert("✅ Usunięto");
+      if (item.type === "series") loadPlexSeries();
+      else if (item.type === "film") loadPlexFilms();
+    } else {
+      alert("❌ Błąd usuwania: " + (result.error || "Nieznany błąd"));
+    }
+  } catch (e) {
+    console.error("Błąd usuwania:", e);
+    alert("❌ Błąd połączenia z serwerem");
+  }
+}
+
+
+async function loadPlexSeries() {
+  const loader = document.getElementById("loading-message");
+  const container = document.getElementById("available-series");
+
+  loader.style.display = "block";
+  container.innerHTML = "";
+
+  try {
+    const res = await fetch("/plex/series");
+    const data = await res.json();
+    loader.style.display = "none";
+
+    data.forEach(series => {
+      const title = series.title;
+      const thumb = series.thumb || "";
+      const progress = series.progress;
+      const episodes = series.episodes;
+      const deleteAt = series.deleteAt;
+      const countdown = deleteAt ? getCountdown(deleteAt) : "";
+
+      const seasons = {};
+      episodes.forEach(ep => {
+        if (!seasons[ep.season]) seasons[ep.season] = [];
+        seasons[ep.season].push(ep);
+      });
+
+      const wrapper = document.createElement("details");
+      wrapper.className = "series-card";
+
+      let head = `
+        <summary class="series-header">
+          <img src="${thumb}" alt="${title}" />
+          <div class="series-info">
+            <h3>${title}</h3>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${progress}%"></div>
+            </div>
+            <span>${progress}% obejrzane</span>
+            ${deleteAt ? `
+              <div style="text-align: right; margin-top: 0.4rem;">
+                <div style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                  <span data-timer-id="${series.id}">${countdown}</span>
+                  <button class="reset-btn" onclick="resetDeleteTimer('${series.id}')">🔁 Resetuj</button>
+                </div>
+                <button onclick="confirmDelete('${series.id}', '${series.title}', 'series')">🗑️ Usuń teraz</button>
+              </div>
+            ` : ""}
+          </div>
+        </summary>
+      `;
+
+      let body = `<div class="series-seasons">`;
+      for (const [seasonNum, eps] of Object.entries(seasons)) {
+        body += `
+          <details>
+            <summary>📁 Sezon ${seasonNum}</summary>
+            <ul>
+              ${eps.map(ep => `
+                <li>
+                  🎬 ${ep.episode}. ${ep.title} – <b>${ep.progress}%</b>
+                  <button style="font-size: 0.7rem; margin-left: 10px;" onclick="confirmDelete('${ep.id}', '${ep.title}', 'episode')">
+                    🗑️
+                  </button>
+                </li>
+              `).join("")}
+            </ul>
+          </details>
+        `;
+      }
+      body += `</div>`;
+
+      wrapper.innerHTML = head + body;
+      container.appendChild(wrapper);
+    });
+
+  } catch (err) {
+    loader.innerHTML = "❌ Błąd ładowania seriali.";
+    console.error(err);
+  }
+}
+
+function getCountdown(targetTime) {
+  const now = Date.now();
+  const diff = targetTime - now;
+
+  if (diff <= 0) return "✅ Do usunięcia";
+
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  if (days > 0) return `⏳ ${days}d ${hours}h`;
+  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
+  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
+  return `⏳ ${seconds}s`;
+}
+
+function confirmDelete(id, title, type) {
+  if (confirm(`⚠️ Czy na pewno chcesz trwale usunąć "${title}" z Plex i dysku?`)) {
+    fetch(`/plex/delete`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, title, type })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("✅ Usunięto");
+        location.reload();
+      } else {
+        alert("❌ Błąd usuwania: " + (data.error || "Nieznany"));
+      }
+    })
+    .catch(() => alert("❌ Błąd usuwania"));
+  }
+}
+
+async function resetDeleteTimer(id) {
+  if (!confirm("Zresetować czas usunięcia (7 dni od teraz)?")) return;
+
+  try {
+    const res = await fetch("/plex/reset-delete-timer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      alert("🕒 Zresetowano czas usunięcia");
+
+      // 🔄 Zaktualizuj tylko tekst countdownu
+      const timerEl = document.querySelector(`[data-timer-id="${id}"]`);
+      if (timerEl && data.newDeleteAt) {
+        timerEl.textContent = getCountdown(data.newDeleteAt);
+
+        // ⏱️ Usuń poprzedni interwał jeśli istnieje
+        if (timerEl._interval) {
+          clearInterval(timerEl._interval);
+        }
+
+        // 🔁 Dynamiczne odliczanie co minutę
+        timerEl._interval = setInterval(() => {
+          timerEl.textContent = getCountdown(data.newDeleteAt);
+        }, 60000);
+      }
+
+    } else {
+      alert("❌ Błąd resetowania: " + (data.error || "nieznany błąd"));
+    }
+
+  } catch (e) {
+    console.error("❌ Błąd połączenia:", e);
+    alert("❌ Błąd połączenia z serwerem");
+  }
+}
+
+</script>
+
+
+
+

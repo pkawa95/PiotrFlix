@@ -6,13 +6,17 @@
   <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-touch-icon-152x152.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-precomposed.png">
 
+
+
   <!-- Wymagane przez iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Piotrflix">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0b12">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f7fb">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <link rel="manifest" href="/manifest.json">
@@ -27,720 +31,1039 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
-  <style>
-  :root {
-    --bg-dark: #121212;
-    --bg-light: #f5f5f5;
-    --card-bg-dark: #1e1e1e;
-    --card-bg-light: #ffffff;
-    --color-dark: #ffffff;
-    --color-light: #000000;
-    --accent: #c60000;
-  }
-
-  body[data-theme="dark"] {
-    background-color: var(--bg-dark);
-    color: var(--color-dark);
-  }
-
-  body[data-theme="light"] {
-    background-color: var(--bg-light);
-    color: var(--color-light);
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Roboto', sans-serif;
-    scroll-behavior: smooth;
-    transition: background-color 0.3s, color 0.3s;
-  }
-
-  .container {
-    max-width: 900px;
-    margin: auto;
-    padding: 2rem;
-    padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom)));
-    animation: fadeIn 0.5s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-
-  input, select, button {
-    width: 100%;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-    font-size: 1rem;
-    border-radius: 10px;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-
-  button {
-    cursor: pointer;
-    background: var(--accent);
-    color: white;
-    transition: background 0.3s ease;
-  }
-
-  button:hover {
-    background: #830000;
-  }
-
-  .series-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-.torrent-details {
-  font-size: 0.9rem;
-  color: #ccc;
-  margin: 0.3rem 0;
+<style>
+/* ========== SERIALE v2 (desktop + mobile) ========== */
+#available-series{
+  display:grid;
+  grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+  gap:16px;
 }
 
+/* karta serialu jako <details> */
+details.series-card{
+  display:block;
+  padding:14px;
+  border-radius:18px;
+  border:var(--border-glass);
+  box-shadow:var(--shadow-card);
+  background:var(--card-bg-dark);
+}
+body[data-theme="light"] details.series-card{ background:var(--card-bg-light); }
 
-.series-header {
-  display: flex;
-  gap: 1rem;
-  cursor: pointer;
-  align-items: center;
+/* chowamy marker <summary> */
+details.series-card > summary{ list-style:none; cursor:pointer; }
+details.series-card > summary::-webkit-details-marker{ display:none; }
+
+/* TOP: poster | info | caret */
+.series-top{
+  display:grid;
+  grid-template-columns: 86px 1fr 18px;
+  gap:12px;
+  align-items:start;
+}
+.series-poster{
+  width:86px; aspect-ratio:2/3; object-fit:cover;
+  border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.35);
+}
+.series-main{ min-width:0; }
+.series-title{
+  margin:0 0 .25rem; font-weight:800; font-size:1.05rem; line-height:1.25; overflow-wrap:anywhere;
+}
+.series-caret{ font-weight:900; opacity:.7; transform:rotate(0deg); transition:transform .18s ease; }
+details.series-card[open] .series-caret{ transform:rotate(90deg); }
+
+/* progress */
+.series-progress{ margin:.15rem 0 .35rem; }
+.series-progress .bar{
+  height:8px; border-radius:8px; overflow:hidden;
+  background:linear-gradient(180deg,#1b1b29,#131320);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.series-progress .fill{
+  height:100%; width:0; transition:width .4s ease;
+  background:linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%, var(--accent-3) 100%);
 }
 
-.series-header img {
-  width: 70px;
-  height: auto;
-  border-radius: 8px;
+/* timer + przyciski */
+.series-timer{
+  display:flex; gap:.5rem; align-items:center; justify-content:flex-end; flex-wrap:wrap;
+  margin-top:.25rem;
+}
+.btn-danger{
+  background: linear-gradient(135deg, #ff3b30 0%, #ff9500 92%) !important;
+  color:#fff !important; padding:.5rem .8rem; border-radius:12px; font-weight:800; border:none;
 }
 
-.series-info {
-  flex: 1; /* ✅ To klucz! */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* chipsy sezonów */
+.season-chips{
+  display:grid; grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
+  gap:8px; margin-top:.6rem;
+}
+.chip{
+  display:flex; align-items:center; gap:.5rem;
+  padding:.45rem .7rem; border-radius:12px;
+  background:rgba(255,255,255,.06); border:var(--border-glass);
+}
+.chip .num{ font-weight:800; }
+.chip .meta{ opacity:.85; font-size:.9rem; }
+.chip.done{ background:linear-gradient(135deg, #27ae60 0%, #36d17c 90%); color:#fff; border:none; }
+
+/* rozwijane listy sezonów/odcinków */
+.series-seasons{ margin-top:.6rem; }
+.series-seasons details{
+  margin-bottom:.45rem; background:rgba(255,255,255,.04);
+  border:var(--border-glass); border-radius:10px; padding:.45rem .6rem;
+}
+.series-seasons summary{ display:flex; align-items:center; gap:.5rem; cursor:pointer; font-weight:700; }
+.series-seasons ul{ margin:.35rem 0 0; padding-left:1.1rem; }
+.series-seasons li{ margin:.25rem 0; font-size:.92rem; }
+
+/* mobile */
+@media (max-width: 600px){
+  #available-series{ grid-template-columns: 1fr; }
+  .series-top{ grid-template-columns: 64px 1fr 18px; gap:.8rem; }
+  .series-poster{ width:64px; }
 }
 
-.series-info span {
-  font-size: 0.9rem;
-  color: #ccc;
-}
+  /* ============ ROOT / THEME ============ */
+  :root{
+    --bg-dark:#0b0b12; --bg-light:#f5f7fb;
+    --card-bg-dark:rgba(22,22,34,.78);
+    --card-bg-light:rgba(255,255,255,.86);
+    --color-dark:#eef2ff; --color-light:#0a0a0f;
 
-.series-seasons {
-  margin-top: 0.8rem;
-  padding-left: 2rem;
-}
+    --accent:#c600ff; --accent-2:#00f0ff; --accent-3:#7cff00;
+    --glow-soft:0 0 12px rgba(198,0,255,.35),0 0 24px rgba(0,240,255,.22);
+    --glow-strong:0 0 18px rgba(198,0,255,.6),0 0 40px rgba(0,240,255,.5);
+    --border-glass:1px solid rgba(255,255,255,.18);
+    --shadow-card:0 10px 30px rgba(0,0,0,.35);
+    --radius-lg:14px; --radius-xl:20px;
 
-.series-seasons details {
-  margin-bottom: 0.6rem;
-  background: rgba(255,255,255,0.03);
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-}
+    --aurora-1:radial-gradient(60% 80% at 10% 10%,rgba(198,0,255,.18),transparent 60%);
+    --aurora-2:radial-gradient(70% 90% at 90% 20%,rgba(0,240,255,.16),transparent 60%);
+    --aurora-3:radial-gradient(60% 60% at 70% 80%,rgba(124,255,0,.14),transparent 60%);
+    --sheen:linear-gradient(120deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.22) 45%,rgba(255,255,255,0) 60%);
 
-.series-seasons summary {
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-}
+    --nav-bg-dark:rgba(16,18,28,.92);
+    --nav-bg-light:rgba(255,255,255,.94);
+  }
 
-.series-seasons ul {
-  padding-left: 1.2rem;
-  margin: 0.5rem 0 0;
-}
+  /* Solid fallback tła (eliminuje białe mignięcia) */
+  html,body{background-color:#0b0b12;}
+  @media (prefers-color-scheme:light){ html,body{background-color:#f5f7fb;} }
 
-.series-seasons li {
-  font-size: 0.9rem;
-  margin-bottom: 0.3rem;
-  color: #ccc;
-}
-.torrent, .search-result, .browse-result {
-  background: var(--card-bg-dark);
-      color: var(--color-dark);
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 12px;
-      max-width: 100%;
-      display: flex;
-      gap: 1rem;
-      transition: background-color 0.3s, color 0.3s;
+  body[data-theme="dark"]{
+    color:var(--color-dark);
+    background:
+      var(--aurora-1),var(--aurora-2),var(--aurora-3),
+      radial-gradient(1200px 800px at 50% 120%, #06060a 20%, var(--bg-dark) 60%);
+    background-attachment:scroll;
+  }
+  body[data-theme="light"]{
+    color:var(--color-light);
+    background:
+      radial-gradient(900px 600px at -10% -10%, rgba(198,0,255,.10), transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, rgba(0,240,255,.10), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, var(--bg-light) 100%);
+    background-attachment:scroll;
+  }
+
+  /* Delikatna animacja aurory (bez fixed) */
+  @media (prefers-reduced-motion:no-preference){
+    body::before{
+      content:""; position:fixed; inset:-20% -10%; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(50% 60% at 30% 20%, rgba(198,0,255,.18), transparent 60%),
+        radial-gradient(55% 65% at 70% 30%, rgba(0,240,255,.16), transparent 60%);
+      filter:blur(42px) saturate(125%);
+      animation:auroraMove 18s ease-in-out infinite alternate;
     }
-  .available-tab-content {
+    @keyframes auroraMove{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-2%,1.5%,0) scale(1.03)}}
+  }
+
+  /* ===== FIX 1: notch / bez przycięcia góry ===== */
+  *{-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+    scroll-behavior:smooth;
+    transition:background-color .3s,color .3s;
+    min-height:100svh;             /* stabilna wysokość na iOS/Safari */
+  }
+  /* globalny top padding na wszystkich trybach (Safari + PWA) */
+  body{
+    padding-top:calc(env(safe-area-inset-top, 0px) + 8px);
+    overscroll-behavior-y:none;
+  }
+  /* w PWA dodatkowo bottom safe-area dla nav poniżej */
+  @media all and (display-mode:standalone){
+    #nav{padding-bottom:calc(.8rem + env(safe-area-inset-bottom));}
+  }
+
+  .container{
+    position:relative; z-index:1; max-width:960px; margin:auto;
+    padding:1rem clamp(1rem,3vw,2rem);
+    padding-bottom:max(7rem, calc(5rem + env(safe-area-inset-bottom)));
+    animation:fadeIn .5s ease;
+  }
+  @keyframes fadeIn{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:translateY(0)}}
+
+  h1{
+    font-size:clamp(1.9rem,3.6vw,2.4rem); margin:.2rem 0 1rem; text-align:center; letter-spacing:.4px;
+    background:linear-gradient(90deg,#fff,#d7d7ff 30%,#ffffff 60%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:var(--glow-soft);
+  }
+
+  /* ====== Inputs / Selects / Buttons ====== */
+  input,select,button{
+    width:100%; padding:.9rem 1rem; margin:.5rem 0; font-size:1rem;
+    border-radius:var(--radius-lg); border:none; outline:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    color:inherit; box-shadow:inset 0 1px 0 rgba(255,255,255,.06), var(--shadow-card);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    transition:transform .15s ease, box-shadow .3s ease, background .3s ease;
+  }
+  input:focus,select:focus{box-shadow:0 0 0 2px rgba(198,0,255,.35),0 0 0 6px rgba(0,240,255,.18), var(--shadow-card);}
+
+  button{
+    cursor:pointer; background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 70%);
+    color:white; border-radius:var(--radius-xl); box-shadow:var(--glow-strong); position:relative; overflow:hidden;
+  }
+  button::after{content:""; position:absolute; inset:0; background:var(--sheen); transform:translateX(-120%); transition:transform .6s ease; mix-blend-mode:screen;}
+  button:hover::after{transform:translateX(0%);} button:hover{transform:translateY(-1px) scale(1.01);} button:active{transform:translateY(0) scale(.995);}
+  button:hover{filter:drop-shadow(0 0 10px rgba(0,240,255,.25));}
+
+  /* ====== Cards / Tiles ====== */
+  .series-card,.torrent,.search-result,.browse-result{
+    background:var(--card-bg-dark); color:var(--color-dark);
+    padding:1rem; margin-bottom:1.1rem; border-radius:var(--radius-xl); border:var(--border-glass);
+    box-shadow:var(--shadow-card), var(--glow-soft);
+    backdrop-filter:blur(14px) saturate(120%); -webkit-backdrop-filter:blur(14px) saturate(120%);
+    max-width:100%; display:flex; gap:1rem; transition:transform .18s ease, box-shadow .3s ease, background .3s ease;
+  }
+  body[data-theme="light"] .series-card,
+  body[data-theme="light"] .torrent,
+  body[data-theme="light"] .search-result,
+  body[data-theme="light"] .browse-result{color:var(--color-light); background:var(--card-bg-light);}
+  .series-card:hover,.torrent:hover,.search-result:hover,.browse-result:hover{
+    transform:translateY(-2px);
+    box-shadow:var(--shadow-card),0 0 0 1px rgba(255,255,255,.06), var(--glow-strong);
+  }
+  /* Torrent rows */
+  .torrent{justify-content:space-between; align-items:flex-start; flex-wrap:wrap;}
+  .torrent-info{flex:1; min-width:60%;}
+  .torrent-name{font-weight:800; margin-bottom:.28rem;}
+  .torrent-details{font-size:.95rem; color:#c6cbff; margin:.3rem 0;}
+  body[data-theme="light"] .torrent-details{color:#6a6a8a;}
+
+  /* Progress bars */
+  .progress-bar{background:linear-gradient(180deg,#1b1b29,#131320); border-radius:8px; overflow:hidden; height:12px; width:100%; box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+  .progress-bar-inner,.series-info .progress-fill{background:linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%, var(--accent-3) 100%); box-shadow:0 0 12px rgba(198,0,255,.6); height:100%; width:0%; min-width:2%; transition:width .5s ease;}
+
+  /* ====== GÓRNE TABS – sticky pod statusem ====== */
+  .search-tabs{
+    position:sticky;
+    top:calc(env(safe-area-inset-top, 0px) + 8px);  /* bez wjeżdżania pod notch */
+    display:flex; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    border-radius:var(--radius-xl);
+    background:var(--nav-bg-dark); border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 6px 22px rgba(0,0,0,.35), var(--glow-soft);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    z-index:5; margin-bottom:1rem;
+  }
+  body[data-theme="light"] .search-tabs{background:var(--nav-bg-light); border-color:rgba(0,0,0,.06);}
+  .search-tab{
+    flex:1 0 auto; min-width:112px;
+    padding:.7rem 1rem; font-size:1rem; font-weight:700; letter-spacing:.2px;
+    border:none; background:transparent; color:inherit; text-align:center; border-bottom:2px solid transparent; position:relative; overflow:hidden;
+  }
+  .search-tab::after{content:""; position:absolute; inset:0; background:var(--sheen); transform:translateX(-120%); transition:transform .6s ease;}
+  .search-tab:hover::after{transform:translateX(0%);}
+  .search-tab.active{
+    background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%);
+    color:white; border-bottom:2px solid white; box-shadow:var(--glow-strong) inset, var(--glow-soft);
+  }
+
+  .available-tab-content{display:none;}
+  .available-tab-content.active{display:block;}
+
+  /* ===== FIX 2: #torrent-tabs – 2 przyciski bez przewijania ===== */
+  #torrent-tabs{
+    overflow-x:hidden;            /* brak paska przewijania */
+    justify-content:center;
+    gap:.5rem;
+  }
+  #torrent-tabs .search-tab{
+    min-width:auto !important;    /* nadpisuje min-width:112px */
+    flex:1 1 50%;                 /* 2 równe przyciski obok siebie */
+    max-width:none;
+    white-space:nowrap;
+  }
+  @media (max-width:360px){
+    #torrent-tabs .search-tab{padding:.6rem .5rem; font-size:.95rem;}
+  }
+
+  /* ====== Filters ====== */
+  #browse-filters{display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;}
+  .filter-group{display:flex; flex-direction:column; flex:1 1 48%; min-width:160px;}
+  @media (max-width:600px){ .filter-group{flex:1 1 100%;} }
+  .filter-group label{margin-bottom:.35rem; font-weight:700; font-size:.9rem;}
+
+  /* ====== Toggles ====== */
+  .theme-toggle-container{position:fixed; bottom:7rem; right:1rem; z-index:999;}
+  .switch-label{display:flex; align-items:center; gap:.6rem; font-size:1rem; margin:1rem 0; cursor:pointer;}
+  .switch-label.small{font-size:.8rem; gap:.3rem; margin:.5rem 0;}
+  .switch-input{opacity:0; width:0; height:0;}
+  .switch-slider{position:relative; display:inline-block; width:54px; height:28px; background:linear-gradient(180deg,#2a2a40,#19192a); border-radius:50px; transition:background .3s, box-shadow .3s; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), var(--glow-soft);}
+  .switch-slider::before{content:""; position:absolute; height:22px; width:22px; left:3px; top:3px; background:radial-gradient(circle at 30% 30%, #fff, #dfe5ff); border-radius:50%; transition:transform .3s; box-shadow:0 2px 10px rgba(0,0,0,.35);}
+  .switch-input:checked + .switch-slider{background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%); box-shadow:var(--glow-strong) inset, var(--glow-soft);}
+  .switch-input:checked + .switch-slider::before{transform:translateX(26px);}
+  .switch-label.small .switch-slider{width:40px; height:20px;} .switch-label.small .switch-slider::before{height:16px; width:16px; top:2px; left:2px;}
+  .switch-label.small .switch-input:checked + .switch-slider::before{transform:translateX(20px);}
+
+  /* ====== Logo ====== */
+  .logo-container{text-align:center; margin-bottom:1rem;}
+  .logo-img{max-width:100%; height:auto; width:260px; filter:drop-shadow(0 8px 24px rgba(198,0,255,.3));}
+  @media (max-width:500px){ .logo-img{width:180px;} }
+
+  .hidden{display:none !important;}
+
+  /* ====== Buttons row ====== */
+  .torrent-buttons-row{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem;}
+  .torrent-buttons-row button{flex:0 0 auto; padding:.45rem .9rem; font-size:.9rem; border-radius:10px; white-space:nowrap; width:auto !important;}
+  .torrent-buttons button{flex:1; margin:.2rem; font-size:.92rem;}
+  .reset-btn{
+    font-size:12px; padding:4px 6px; background:linear-gradient(135deg,#27ae60,#36d17c);
+    color:white; border:none; border-radius:8px; cursor:pointer; line-height:1; height:26px; white-space:nowrap; display:inline-block; text-align:center; margin-left:8px; width:auto; box-shadow:0 6px 18px rgba(39,174,96,.35);
+  }
+  .reset-btn:hover{filter:brightness(1.05); transform:translateY(-1px);}
+
+  /* ====== Result cards ====== */
+  .search-result img,.browse-result img{width:100px; border-radius:12px; object-fit:cover; box-shadow:0 10px 24px rgba(0,0,0,.35);}
+  .result-content{flex:1; display:flex; flex-direction:column; gap:.6rem; justify-content:space-between;}
+  .torrent-title,.torrent-name,.search-result .result-content b,.browse-result .result-content b{
+    font-size:clamp(.98rem,3.5vw,1.08rem); line-height:1.3; margin:0; word-break:break-word; overflow-wrap:anywhere; letter-spacing:.2px;
+  }
+  .search-result .result-content > div:first-child,.browse-result .result-content > div:first-child{display:flex; flex-wrap:wrap; gap:.35rem;}
+
+  /* ====== DOLNE MENU ====== */
+  #nav{
+    position:fixed; bottom:0; left:0; right:0;
+    display:flex; justify-content:space-around; gap:.2rem;
+    padding:.65rem .6rem calc(.65rem + env(safe-area-inset-bottom));
+    background:var(--nav-bg-dark);
+    border-top:1px solid rgba(255,255,255,.1);
+    box-shadow:0 -8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%);
+    z-index:999;
+  }
+  body[data-theme="light"] #nav{
+    background:var(--nav-bg-light);
+    border-top:1px solid rgba(0,0,0,.06);
+    box-shadow:0 -8px 22px rgba(0,0,0,.12), inset 0 1px 0 rgba(0,0,0,.04);
+  }
+  #nav button{
+    background:none; border:none; color:inherit; transition:color .2s, transform .12s ease;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.25rem;
+    font-weight:700; font-size:.95rem; line-height:1;
+    padding:.4rem .6rem; min-width:74px; border-radius:12px;
+  }
+  #nav button .icon{font-size:1.25rem; line-height:1;}
+  #nav button:hover{color:var(--accent-2); transform:translateY(-1px);}
+  #nav button.active{background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%); color:white; box-shadow:var(--glow-strong);}
+  @media (max-width:600px){
+    #nav{justify-content:space-between;}
+    #nav button{flex:1 1 25%; min-width:auto; font-size:.9rem; padding:.5rem .4rem;}
+    #nav button .icon{font-size:1.2rem;}
+  }
+
+  /* ====== Sections ====== */
+  .section{display:none;}
+  .section.active{display:block; animation:fadeIn .4s ease;}
+
+  /* ====== Browse controls ====== */
+  #browse-filters select{width:49%; display:inline-block; margin:.5% 0;}
+  #browse-pagination{text-align:center; margin-top:1rem;}
+
+  /* ====== Modal ====== */
+  #quality-modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.68); align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px);}
+  #quality-modal .modal-content{
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+    color:var(--color-dark); padding:1.5rem; border-radius:var(--radius-xl); width:90%; max-width:380px; text-align:center;
+    border:var(--border-glass); box-shadow:var(--shadow-card), var(--glow-soft);
+  }
+
+  /* ====== Responsive tuning ====== */
+  @media (max-width:600px){
+    .search-result,.browse-result{font-size:.96rem; flex-direction:column;}
+    .search-result img,.browse-result img{width:100%; max-height:180px;}
+    .series-header img{width:64px;}
+  }
+
+  /* ====== Scrollbar (WebKit) ====== */
+  *::-webkit-scrollbar{height:10px; width:10px;}
+  *::-webkit-scrollbar-track{background:rgba(255,255,255,.06);}
+  *::-webkit-scrollbar-thumb{background:linear-gradient(180deg, var(--accent), var(--accent-2)); border-radius:10px;}
+
+  /* ====== Light theme kontrast ====== */
+  body[data-theme="light"] .search-result .result-content div,
+  body[data-theme="light"] .browse-result .result-content div{color:#34344a;}
+  body[data-theme="light"] .series-info span,
+  body[data-theme="light"] .series-seasons li{color:#515170;}
+  /* === MOBILE: "Dostępne" kafle – układ poziomy z mini-posterem, tytułem, progresem i przyciskiem usuń pod paskiem === */
+@media (max-width: 600px){
+  /* Filmy (available-films) */
+  #section-available .browse-result{
+    flex-direction: row !important;
+    align-items: center;
+    gap: .75rem;
+    padding: .8rem;
+  }
+  #section-available .browse-result img{
+    width: 68px;
+    height: 102px;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    flex: 0 0 auto;
+    border-radius: 10px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.35);
+  }
+  #section-available .browse-result .result-content{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title title"
+      "progress progress"
+      "delete time";
+    align-items: center;
+    gap: .45rem .6rem;
+    width: 100%;
+  }
+  #section-available .browse-result .result-content > b{      /* tytuł */
+    grid-area: title;
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+  #section-available .browse-result .result-content .progress-bar{  /* progress */
+    grid-area: progress;
+    height: 10px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  #section-available .browse-result .result-content > small{  /* schowaj procent tekstowy by nie zaśmiecał */
     display: none;
   }
-  .available-tab-content.active {
-    display: block;
+  /* Wew. wrapper z czasem i przyciskiem – przebuduj na siatkę: lewo=Usuń, prawo=Czas(+Reset) */
+  #section-available .browse-result .result-content > div:last-child{
+    grid-area: delete / 1 / span 1 / -1; /* zajmie cały wiersz, ale rozkładamy w nim 2 kolumny */
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .1rem !important;
+  }
+  /* przycisk "Usuń teraz" – po lewej, pełna szerokość, styl danger */
+  #section-available .browse-result .result-content > div:last-child > button:last-of-type{
+    grid-column: 1;
+    width: 100%;
+    padding: .5rem .9rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff3b30 0%, #ff9500 90%);
+    box-shadow: 0 8px 22px rgba(255,59,48,.32);
+    font-weight: 800;
+  }
+  /* blok z czasem i (opcjonalnie) resetem – po prawej */
+  #section-available .browse-result .result-content > div:last-child > div:first-child{
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    justify-content: flex-end;
+  }
+  /* odchudź reset na mobile, żeby mieścił się koło czasu */
+  #section-available .reset-btn{
+    padding: .35rem .5rem;
+    height: auto;
+    font-size: .78rem;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(39,174,96,.25);
   }
 
-   .search-tabs {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1rem;
-  gap: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  border-radius: 12px;
-  background: var(--card-bg-dark);
-}
-
-.search-tab {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
-  background-color: transparent;
-  color: inherit;
-  flex: 1 1 auto;
-  text-align: center;
-  border-bottom: 2px solid transparent;
-}
-
-.search-tab.active {
-  background-color: var(--accent);
-  color: white;
-  border-bottom: 2px solid white;
-}
-
-body[data-theme="light"] .search-tabs {
-  background: var(--card-bg-light);
-}
-
-body[data-theme="light"] .search-tab.active {
-  border-bottom-color: var(--color-light);
-}
-
-
-body[data-theme="light"] .search-tab {
-  background-color: var(--card-bg-light);
-  color: var(--color-light);
-}
-
-.search-tab.active {
-  background-color: var(--accent);
-  color: white;
-}
-
-
-    #browse-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 48%; /* dwie kolumny na desktopie */
-  min-width: 160px;
-}
-
-@media (max-width: 600px) {
-  .filter-group {
-    flex: 1 1 100%; /* jedna kolumna na małych ekranach */
+  /* Seriale (available-series) – miniaturka mniejsza, spójny odstęp */
+  #section-available .series-card .series-header img{
+    width: 60px !important;
+    height: auto;
+    border-radius: 10px;
+  }
+  /* "Usuń teraz" w serialach – taki sam styl danger i pełna szerokość pod progresem */
+  #section-available .series-card .series-info > button{
+    width: 100%;
+    margin-top: .45rem;
+    padding: .5rem .9rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff3b30 0%, #ff9500 90%);
+    box-shadow: 0 8px 22px rgba(255,59,48,.32);
+    font-weight: 800;
   }
 }
 
-.filter-group label {
-  margin-bottom: 0.3rem;
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-
-    .theme-toggle-container {
-  position: fixed;
-  bottom: 7rem;
-  right: 1rem;
-  z-index: 999;
-}
-
-    .switch-label.small {
-  font-size: 0.8rem;
-  gap: 0.3rem;
-  margin: 0.5rem 0;
-}
-
-.switch-label.small .switch-slider {
-  width: 36px;
-  height: 18px;
-}
-
-.switch-label.small .switch-slider::before {
-  height: 14px;
-  width: 14px;
-  top: 2px;
-  left: 2px;
-}
-
-.switch-label.small .switch-input:checked + .switch-slider::before {
-  transform: translateX(18px);
-}
-
-
-    .switch-label {
-  display: flex;
+/* === Czas do usunięcia – elegancka "pigułka" (działa dla filmów i seriali) === */
+#section-available [data-timer],
+#section-available [data-timer-id]{
+  display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 1rem;
-  margin: 1rem 0;
-  cursor: pointer;
-  position: relative;
+  gap: .35rem;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  font-size: .86rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, rgba(0,240,255,.16), rgba(198,0,255,.16));
+  color: var(--color-dark);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06), var(--glow-soft);
+}
+body[data-theme="light"] #section-available [data-timer],
+body[data-theme="light"] #section-available [data-timer-id]{
+  color: var(--color-light);
+  background: linear-gradient(135deg, rgba(0,0,0,.06), rgba(0,0,0,.03));
+  border-color: rgba(0,0,0,.08);
 }
 
-.switch-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+/* === Dropdown (select) w trybie ciemnym – kontrastr i ciemna lista opcji === */
+body[data-theme="dark"] select{
+  -webkit-appearance: none;
+  appearance: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23cfd3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right .9rem center / 14px 14px;
+  color: var(--color-dark);
+  border: 1px solid rgba(255,255,255,.12);
+  padding-right: 2.5rem; /* miejsce na strzałkę */
+}
+body[data-theme="dark"] select:focus{
+  box-shadow: 0 0 0 2px rgba(198,0,255,.35), 0 0 0 6px rgba(0,240,255,.18), var(--shadow-card);
+}
+body[data-theme="dark"] select option{
+  background-color: #151521;
+  color: var(--color-dark);
+}
+/* Safari iOS – wymuszenie ciemnego stylu pop-upu gdzie to możliwe */
+@supports (color-scheme: dark){
+  body[data-theme="dark"] select{ color-scheme: dark; }
 }
 
-.switch-slider {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
-  background-color: #ccc;
-  border-radius: 50px;
-  transition: background-color 0.3s;
+/* === MOBILE UPGRADE: lepszy układ gdy jest dostępny timer (countdown) === */
+@media (max-width: 600px){
+  /* 1) Jeśli kafel ma timer – ustaw wiersz z timerem NAD przyciskiem Usuń */
+  @supports selector(:has(*)){
+    #section-available .browse-result:has([data-timer]) .result-content{
+      /* zostawiamy mini-poster po lewej, prawa kolumna w siatce */
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "title"
+        "progress"
+        "actions";
+      gap: .5rem .6rem;
+    }
+    /* kontener z timerem+resetem oraz przyciskiem usuń */
+    #section-available .browse-result:has([data-timer]) .result-content > div:last-child{
+      grid-area: actions;
+      display: grid !important;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;    /* 1: timer+reset, 2: usuń */
+      gap: .55rem;
+      margin-top: .1rem !important;
+    }
+    /* rząd z timerem + reset pośrodku */
+    #section-available .browse-result:has([data-timer]) .result-content > div:last-child > div:first-child{
+      grid-row: 1; grid-column: 1;
+      display: flex !important;
+      align-items: center; justify-content: center;
+      gap: .5rem;
+      font-size: .9rem;
+    }
+    /* przycisk "Usuń teraz" – cały wiersz poniżej */
+    #section-available .browse-result:has([data-timer]) .result-content > div:last-child > button:last-of-type{
+      grid-row: 2; grid-column: 1;
+      width: 100%;
+      padding: .55rem .9rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff3b30 0%, #ff9500 92%);
+      box-shadow: 0 8px 22px rgba(255,59,48,.28);
+      font-weight: 800;
+      font-size: .95rem;        /* żeby nie był "za wielki" */
+    }
+  }
+
+  /* 2) Pasek postępu w "Dostępne" minimalnie cieńszy, żeby timer miał oddech */
+  #section-available .progress-bar{ height: 10px; border-radius: 10px; }
 }
 
-.switch-slider::before {
-  content: "";
-  position: absolute;
-  height: 22px;
-  width: 22px;
-  left: 2px;
-  top: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: transform 0.3s;
+/* === TIMER PILL: bardziej czytelny kapsel + subtelna poświata === */
+#section-available [data-timer],
+#section-available [data-timer-id]{
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .28rem .62rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: .9rem;
+  letter-spacing: .2px;
+  font-variant-numeric: tabular-nums;
+  background:
+    radial-gradient(60% 120% at 50% 0%, rgba(198,0,255,.18), transparent 65%),
+    linear-gradient(180deg, rgba(26,26,40,.9), rgba(16,16,28,.9));
+  color: var(--color-dark);
+  border: 1px solid rgba(198,0,255,.35);
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.25) inset,
+    0 0 16px rgba(102,56,255,.35),
+    0 2px 10px rgba(0,0,0,.35);
+}
+body[data-theme="light"] #section-available [data-timer],
+body[data-theme="light"] #section-available [data-timer-id]{
+  color: var(--color-light);
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(245,247,251,.9));
+  border-color: rgba(0,0,0,.08);
+  box-shadow: 0 1px 6px rgba(0,0,0,.12) inset, 0 0 0 1px rgba(0,0,0,.06);
 }
 
-.switch-input:checked + .switch-slider {
-  background-color: var(--accent);
-}
-
-.switch-input:checked + .switch-slider::before {
-  transform: translateX(24px);
-}
-
-
-    .logo-container {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.logo-img {
-  max-width: 100%;
+/* 3) Przyciski reset – kompakt w linii z timerem */
+#section-available .reset-btn{
+  padding: .38rem .6rem;
+  font-size: .8rem;
   height: auto;
-  width: 250px;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(39,174,96,.22);
 }
 
-.hidden {
+/* 4) Delikatny odstęp pod tytułem, by bar/ timer nie kleił się na mobile */
+#section-available .browse-result .result-content > b{
+  margin-bottom: .1rem;
+}
+
+/* === "Usuń teraz" — ten sam styl także na DESKTOP === */
+#section-available .browse-result .result-content > div:last-child > button:last-of-type,
+#section-available .series-card .series-info > button{
+  background: linear-gradient(135deg, #ff3b30 0%, #ff9500 92%) !important; /* danger */
+  color: #fff !important;
+  border: none;
+  border-radius: 12px;
+  padding: .55rem 1rem;
+  font-weight: 800;
+  font-size: .95rem;
+  letter-spacing: .2px;
+  box-shadow: 0 8px 22px rgba(255,59,48,.28);
+  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+}
+
+/* hover/active – spójne zachowanie */
+#section-available .browse-result .result-content > div:last-child > button:last-of-type:hover,
+#section-available .series-card .series-info > button:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+  box-shadow: 0 10px 28px rgba(255,59,48,.36);
+}
+#section-available .browse-result .result-content > div:last-child > button:last-of-type:active,
+#section-available .series-card .series-info > button:active{
+  transform: translateY(0);
+  filter: brightness(.98);
+}
+
+/* Na mobile dalej zostaje pełna szerokość (jak wcześniej) */
+@media (max-width: 600px){
+  #section-available .browse-result .result-content > div:last-child > button:last-of-type,
+  #section-available .series-card .series-info > button{ width: 100%; }
+}
+
+/* === TABS BEZ PRZEWIJANIA — DESKTOP + MOBILE === */
+/* Sekcja SZUKAJ: 3 zakładki (Filmy, Filmy+, Seriale) */
+#search-tabs{
+  overflow-x: hidden !important;         /* wyłącz przewijanie */
+  justify-content: center;               /* wyśrodkuj */
+  gap: .5rem;
+}
+#search-tabs .search-tab{
+  min-width: auto !important;            /* zdejmij minimalną szerokość */
+  flex: 1 1 33.333% !important;          /* 3 równe przyciski w wierszu */
+  max-width: none;
+  white-space: nowrap;                    /* bez łamań */
+  padding: .7rem 1rem;
+}
+
+/* Sekcja DOSTĘPNE: 2 zakładki (Filmy/Seriale) */
+#available-tabs{
+  overflow-x: hidden !important;
+  justify-content: center;
+  gap: .5rem;
+}
+#available-tabs .search-tab{
+  min-width: auto !important;
+  flex: 1 1 50% !important;              /* 2 równe przyciski */
+  max-width: none;
+  white-space: nowrap;
+  padding: .7rem 1rem;
+}
+
+/* Mobile tightening (żeby zawsze się mieściły) */
+@media (max-width: 420px){
+  #search-tabs .search-tab,
+  #available-tabs .search-tab{
+    padding: .6rem .6rem;
+    font-size: .95rem;
+  }
+}
+@media (max-width: 360px){
+  #search-tabs .search-tab,
+  #available-tabs .search-tab{
+    padding: .55rem .45rem;
+    font-size: .9rem;
+    letter-spacing: .1px;
+  }
+}
+
+/* === "Resetuj" w sekcji DOSTĘPNE — nowy, spójny styl (desktop+mobile) === */
+#section-available .reset-btn{
+  background: linear-gradient(135deg, #27ae60 0%, #36d17c 90%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: .45rem .8rem;
+  font-weight: 800;
+  font-size: .9rem;
+  letter-spacing: .2px;
+  box-shadow: 0 8px 20px rgba(39,174,96,.26), 0 0 0 1px rgba(255,255,255,.04) inset;
+  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+}
+#section-available .reset-btn:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 10px 26px rgba(39,174,96,.34);
+}
+#section-available .reset-btn:active{
+  transform: translateY(0);
+  filter: brightness(.98);
+}
+
+/* Mobile kompakt obok timera */
+@media (max-width: 600px){
+  #section-available .reset-btn{
+    padding: .38rem .6rem;
+    font-size: .82rem;
+    border-radius: 10px;
+  }
+}
+
+
+/* === SZUKAJ: długość pola "Szukaj tytułu" (desktop + mobile) === */
+#section-search #search-query{
+  width: 100%;
+  max-width: 560px;         /* DESKTOP limit szerokości */
+  margin: .5rem auto 0;     /* wyśrodkuj */
+  display: block;
+}
+@media (min-width: 1200px){
+  #section-search #search-query{ max-width: 640px; }  /* na bardzo szerokich */
+}
+@media (max-width: 600px){
+  #section-search #search-query{
+    max-width: 100%;        /* MOBILE pełna szerokość */
+    margin-top: .4rem;
+  }
+}
+#section-search #search-query::placeholder{
+  opacity: .9;
+}
+body[data-theme="light"] #section-search #search-query::placeholder{
+  color:#6b6b80;
+}
+
+/* === MOBILE (jasny tryb): spójny styl wszystkich <select> jak w ciemnym === */
+body[data-theme="light"] select{
+  -webkit-appearance: none;
+  appearance: none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23515170' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right .9rem center / 14px 14px;
+  color: var(--color-light);
+  border: 1px solid rgba(0,0,0,.10);
+  padding-right: 2.5rem;            /* miejsce na strzałkę */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), var(--shadow-card);
+  border-radius: var(--radius-lg);
+}
+body[data-theme="light"] select:focus{
+  box-shadow: 0 0 0 2px rgba(198,0,255,.28),
+              0 0 0 6px rgba(0,240,255,.14),
+              var(--shadow-card);
+}
+body[data-theme="light"] select option{
+  background-color: #ffffff;
+  color: var(--color-light);
+  /* przezroczystość subtelna jak w ciemnym */
+  background-image: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.00));
+  border: none;
+}
+/* Wymuszenie jasnego pop-upu (Safari/iOS) */
+@supports (color-scheme: light){
+  body[data-theme="light"] select{ color-scheme: light; }
+}
+
+/* MOBILE drobna kompaktowość dla selectów w jasnym trybie */
+@media (max-width: 600px){
+  body[data-theme="light"] select{
+    padding: .85rem 1rem;
+    padding-right: 2.5rem;
+    font-size: 1rem;
+  }
+}
+
+
+/* === SZUKAJ: skróć pole "Szukaj tytułu" i nadpisz globalne width:100% === */
+#section-search input#search-query{
+  width: clamp(240px, 46ch, 460px) !important; /* krótsze na desktopie */
+  display: block;
+  margin: .5rem auto .75rem;                  /* wyśrodkuj */
+}
+
+/* Bardzo szerokie ekrany – trzymaj stałą, zgrabną szerokość */
+@media (min-width: 1280px){
+  #section-search input#search-query{ width: 460px !important; }
+}
+
+/* Mobile – prawie pełna szerokość, ale z marginesami bocznymi */
+@media (max-width: 600px){
+  #section-search input#search-query{
+    width: clamp(220px, 88vw, 360px) !important;
+  }
+}
+
+
+/* Jeszcze krótsze pole "Szukaj tytułu" na mobilach */
+@media (max-width: 600px){
+  #section-search input#search-query{
+    width: clamp(150px, 72vw, 280px) !important;
+    margin-left: auto; margin-right: auto;
+    font-size: .95rem;
+  }
+}
+@media (max-width: 420px){
+  #section-search input#search-query{
+    width: clamp(150px, 68vw, 240px) !important;
+  }
+}
+@media (max-width: 360px){
+  #section-search input#search-query{
+    width: clamp(140px, 64vw, 220px) !important;
+  }
+}
+
+
+/* USUŃ RAMKI POD PRZYCISKAMI (desktop + mobile) */
+/* Wyłącz tło, ramkę, blur i cień kontenera zakładek */
+.search-tabs,
+#search-tabs,
+#available-tabs,
+#torrent-tabs{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;         /* bez wewnętrznej „ramki” */
+  border-radius: 0 !important;   /* dla pewności – zero zaokrąglenia kontenera */
+}
+
+/* W trybie jasnym również bez ramki */
+body[data-theme="light"] .search-tabs,
+body[data-theme="light"] #search-tabs,
+body[data-theme="light"] #available-tabs,
+body[data-theme="light"] #torrent-tabs{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
+/* HARD RESET: zero „ramek/hal” pod zakładkami (desktop + mobile) */
+.search-tabs,
+#search-tabs,
+#available-tabs,
+#torrent-tabs{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.search-tabs::before,
+.search-tabs::after,
+#search-tabs::before,
+#search-tabs::after,
+#available-tabs::before,
+#available-tabs::after,
+#torrent-tabs::before,
+#torrent-tabs::after{
+  content: none !important;
   display: none !important;
 }
 
-@media (max-width: 500px) {
-  .logo-img {
-    width: 180px;
+/* same przyciski – brak tła/obwódek dla NIEaktywnych */
+#search-tabs .search-tab,
+#available-tabs .search-tab,
+#torrent-tabs .search-tab{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* aktywna zakładka – zostaw gradient pigułkę, usuń zewnętrzną poświatę (halo) */
+#search-tabs .search-tab.active,
+#available-tabs .search-tab.active,
+#torrent-tabs .search-tab.active{
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%) !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important; /* bez rozlanej poświaty */
+}
+#search-tabs .search-tab.active::after,
+#available-tabs .search-tab.active::after,
+#torrent-tabs .search-tab.active::after{
+  display: none !important; /* wyłącz „sheen”, jeśli robi otoczkę */
+}
+/* ====== Modal potwierdzenia usuwania ====== */
+#confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#confirm-modal.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#confirm-modal.hidden {
+  display: none;
+}
+
+/* Okno */
+#confirm-modal .modal-content {
+  background: #222; /* ciemny motyw domyślnie */
+  color: #eee;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: scaleIn 0.25s ease;
+}
+
+/* Treść wiadomości */
+#confirm-message {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Pogrubiony tytuł */
+#confirm-message b {
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Przyciski */
+#confirm-yes,
+#confirm-no {
+  margin: 0.4rem;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#confirm-yes {
+  background: #e74c3c;
+  color: #fff;
+}
+#confirm-yes:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+#confirm-no {
+  background: #555;
+  color: #fff;
+}
+#confirm-no:hover {
+  background: #666;
+  transform: scale(1.05);
+}
+
+/* ====== Jasny tryb ====== */
+#confirm-modal.light .modal-content {
+  background: #fff;
+  color: #222;
+}
+
+#confirm-modal.light #confirm-message b {
+  color: #000;
+}
+
+#confirm-modal.light #confirm-yes {
+  background: #e74c3c;
+  color: #fff;
+}
+#confirm-modal.light #confirm-no {
+  background: #ddd;
+  color: #222;
+}
+#confirm-modal.light #confirm-no:hover {
+  background: #ccc;
+}
+
+/* Animacja */
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ====== Mobile ====== */
+@media (max-width: 480px) {
+  #confirm-modal .modal-content {
+    max-width: 90%;
+    padding: 1rem;
+  }
+  #confirm-yes,
+  #confirm-no {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+    font-size: 1rem;
   }
 }
 
-    .torrent {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.torrent-info {
-  flex: 1;
-  min-width: 60%;
-}
 
 
-.reset-btn {
-  font-size: 12px;
-  padding: 4px 4px;
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  line-height: 1;
-  height: 22px;
-  white-space: nowrap;
-  display: inline-block;
-  text-align: center;
-  margin-left: 8px;
-  min-width: unset;
-  width: auto;
-}
-
-.reset-btn:hover {
-  background-color: #219150;
-}
+</style>
 
 
-.torrent-name {
-  font-weight: bold;
-  margin-bottom: 0.3rem;
-}
-.torrent-details {
-  font-size: 0.9rem;
-  color: gray;
-  margin-top: 0.4rem;
-}
-
-.progress-bar {
-  background: #444;
-  border-radius: 6px;
-  overflow: hidden;
-  height: 12px;
-  width: 100%;
-}
-
-.progress-bar-inner {
-  background: var(--accent);
-  height: 100%;
-  width: 0%;
-  transition: width 0.5s ease;
-}
-
-
-    body[data-theme="light"] .torrent,
-    body[data-theme="light"] .search-result,
-    body[data-theme="light"] .browse-result {
-      background: var(--card-bg-light);
-      color: var(--color-light);
-    }
-
-    .search-result img, .browse-result img {
-      width: 100px;
-      border-radius: 10px;
-      object-fit: cover;
-    }
-
-    .result-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .torrent-buttons-row button {
-  flex: 0 0 auto;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  border-radius: 8px;
-  white-space: nowrap;
-  width: auto !important; /* ⬅️ nadpisuje width: 100% z ogólnego button */
-}
-
-
-.torrent-buttons-row button {
-  flex: 0 0 auto;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  border-radius: 8px;
-  min-width: unset;
-  white-space: nowrap;
-}
-
-
-.progress-bar {
-  background: #333;
-  border-radius: 6px;
-  overflow: hidden;
-  height: 12px;
-}
-
-.progress-bar-inner {
-  background: var(--accent);
-  height: 100%;
-  min-width: 2%; /* ✅ będzie zawsze widoczny nawet przy 0% */
-  transition: width 0.5s ease;
-}
-
-    .torrent-buttons button {
-  flex: 1;
-  margin: 0.2rem;
-  font-size: 0.9rem;
-}
-
-    #nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background-color: var(--card-bg-dark);
-      display: flex;
-      justify-content: space-around;
-      padding: 0.7rem 0;
-      z-index: 999;
-      transition: background-color 0.3s;
-    }
-
-    body[data-theme="light"] #nav {
-      background-color: var(--card-bg-light);
-    }
-
-    #nav button {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      color: inherit;
-      transition: color 0.3s;
-    }
-
-    .section {
-      display: none;
-    }
-
-    .torrent-title {
-  font-size: clamp(0.9rem, 3.8vw, 1rem);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: normal;
-  line-height: 1.3;
-  margin: 0; /* usuwa domyślny margines <h3> */
-}
-
-
-    .section.active {
-      display: block;
-      animation: fadeIn 0.4s ease;
-    }
-
-    #browse-filters select {
-      width: 49%;
-      display: inline-block;
-      margin: 0.5% 0;
-    }
-
-    #browse-pagination {
-      text-align: center;
-      margin-top: 1rem;
-    }
-
-    #quality-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    #quality-modal .modal-content {
-      background: var(--card-bg-dark);
-      color: var(--color-dark);
-      padding: 1.5rem;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 320px;
-      text-align: center;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    {
-
-    .series-card {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 0.5rem 1rem;
-      margin-bottom: 1rem;
-      overflow: hidden;
-    }
-
-    .series-card summary {
-      list-style: none;
-    }
-
-    /* === SERIES HEADER === */
-    .series-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      cursor: pointer;
-      flex-wrap: wrap;
-    }
-
-    .series-header img {
-      width: 70px;
-      height: auto;
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-
-    .series-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0; /* 📏 kluczowe do skracania tekstu */
-    }
-
-    .series-info h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .series-info span {
-      font-size: 0.9rem;
-      color: #ccc;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .series-info .progress-bar {
-      background: #333;
-      border-radius: 6px;
-      overflow: hidden;
-      height: 10px;
-      width: 100%;
-      margin: 0.3rem 0;
-    }
-
-    .series-info .progress-fill {
-      background: var(--accent, #c60000);
-      height: 100%;
-      transition: width 0.4s;
-    }
-
-    /* === SEASONS === */
-    .series-seasons {
-      margin-top: 0.5rem;
-      padding-left: 1rem;
-    }
-
-    .series-seasons details {
-      margin-bottom: 0.6rem;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-    }
-
-    .series-seasons summary {
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-
-    .series-seasons ul {
-      padding-left: 1rem;
-      margin: 0.4rem 0;
-    }
-
-    .series-seasons li {
-      font-size: 0.9rem;
-      margin-bottom: 0.3rem;
-      color: #ccc;
-    }
-
-    /* === SEARCH/BROWSE RESULTS === */
-    #search-results {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .search-result, .browse-result {
-      display: flex;
-      flex-direction: column;
-      background: var(--card-bg-dark);
-      color: var(--color-dark);
-      border-radius: 12px;
-      overflow: hidden;
-      padding: 1rem;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .search-result img, .browse-result img {
-      width: 100%;
-      max-height: 160px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
-    .search-result .result-content, .browse-result .result-content {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      flex: 1;
-      margin-top: 0.5rem;
-    }
-
-    .search-result .result-content div,
-    .browse-result .result-content div {
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin: 0.5rem 0;
-    }
-
-    .search-result button,
-    .browse-result button {
-      flex: 0 0 auto;
-      width: 100%;
-      max-width: 200px;
-      margin-top: 0.5rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      align-self: flex-start;
-    }
-
-    @media (max-width: 600px) {
-      .search-result, .browse-result {
-        font-size: 0.9rem;
-      }
-    }
-
-    }
-
-.torrent-name,
-.search-result .result-content b,
-.browse-result .result-content b {
-  font-size: clamp(0.9rem, 3.5vw, 1rem);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: normal;
-  line-height: 1.3;
-  max-width: 100%;
-  display: block;
-}
-
-.search-result .result-content > div:first-child,
-.browse-result .result-content > div:first-child {
-  flex-wrap: wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  white-space: normal;
-  display: flex;
-  gap: 0.3rem;
-}
-
-
-  </style>
 </head>
 
 <body data-theme="dark">
@@ -776,6 +1099,9 @@ body[data-theme="light"] .search-tab {
   <option value="10">10 MB/s</option>
   <option value="15">15 MB/s</option>
 </select>
+      <!-- mały status pod selectem -->
+<div id="global-speed-feedback" style="margin-top:6px;font-size:.9rem;color:#444;"></div>
+
 
       <div id="summary" style="margin: 1rem 0; font-weight: bold;"></div>
       <div class="search-tabs" id="torrent-tabs" style="margin-bottom: 1rem;">
@@ -1010,21 +1336,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingMagnetUrl = null;
   let activeSearchTab = "movies";
 
-  document.querySelectorAll(".search-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".search-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      activeSearchTab = tab.getAttribute("data-type");
-
-      const cached = searchResultsCache[activeSearchTab];
-      if (cached) {
-        renderResults(cached);
-      } else {
-        document.getElementById("search-results").innerHTML = "";
-        document.getElementById("search-status").innerText = "";
-      }
-    });
-  });
 
   const searchBtn = document.getElementById("search-button");
   if (searchBtn) {
@@ -1053,20 +1364,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.confirmQuality = confirmQuality;
   window.downloadFromResult = downloadFromResult;
   window.searchContent = searchContent;
-  loadPlexFilms(); // domyślnie załaduj filmy
   document.querySelector("[data-available-tab='films']").click();
-  if (name === "available") {
-  // ustaw domyślną zakładkę na filmy
-  document.querySelectorAll("#available-tabs .search-tab").forEach(t => t.classList.remove("active"));
-  document.querySelector("[data-available-tab='films']").classList.add("active");
-
-  document.querySelectorAll(".available-tab-content").forEach(s => s.classList.remove("active"));
-  document.getElementById("available-films").classList.add("active");
-
-  loadPlexFilms();
-}
-
-
   loadTorrents();
   setInterval(loadTorrents, 2000);
   document.querySelectorAll("#torrent-tabs .search-tab").forEach(tab => {
@@ -1077,6 +1375,22 @@ document.addEventListener("DOMContentLoaded", () => {
       loadTorrents();
     });
   });
+
+  document.querySelectorAll(".search-tab[data-type]").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".search-tab[data-type]").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeSearchTab = tab.getAttribute("data-type");
+
+    const cached = searchResultsCache[activeSearchTab];
+    if (cached) {
+      renderResults(cached);
+    } else {
+      document.getElementById("search-results").innerHTML = "";
+      document.getElementById("search-status").innerText = "";
+    }
+  });
+});
 
 
   function formatSpeed(bps) {
@@ -1419,21 +1733,6 @@ async function loadTorrents() {
     }
 }
 
-// Odświeżaj co 10 sekund
-setInterval(fetchTorrentStatus, 10000);
-fetchTorrentStatus(); // Pierwsze wywołanie od razu
-
-  document.querySelectorAll('.speed-limit').forEach(select => {
-  select.addEventListener('change', () => {
-    const id = select.dataset.id;
-    const limit = select.value;
-    fetch(`/limit/${id}`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ limit })
-    }).then(res => res.json()).then(console.log);
-  });
-});
 
   document.getElementById("global-speed-limit").addEventListener("change", function () {
   const limit = this.value;
@@ -1466,27 +1765,62 @@ fetchTorrentStatus(); // Pierwsze wywołanie od razu
   });
 });
 
+
+// === 1) Jedna, wspólna funkcja countdown (usuń duplikaty) ===
 function getCountdown(targetTime) {
   const now = Date.now();
   const diff = targetTime - now;
-
+  if (!Number.isFinite(diff)) return "–";
   if (diff <= 0) return "✅ Do usunięcia";
 
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
 
-  if (days > 0) return `⏳ ${days}d ${hours}h`;
-  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
-  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
-  return `⏳ ${seconds}s`;
+  if (d > 0) return `⏳ ${d}d ${h}h`;
+  if (h > 0) return `⏳ ${h}h ${m}m`;
+  if (m > 0) return `⏳ ${m}m ${s}s`;
+  return `⏳ ${s}s`;
 }
 
+// globalne, lekkie odświeżanie kapsli z timerem
+function ensureCountdownLoop() {
+  if (window._countdownLoop) return;
+  window._countdownLoop = setInterval(() => {
+    document.querySelectorAll('[data-target]').forEach(el => {
+      const ts = Number(el.dataset.target);
+      if (Number.isFinite(ts)) el.textContent = getCountdown(ts);
+    });
+  }, 1000);
+}
 
+// === 2) Pomocnicze: wylicz deadline tylko dla 100% obejrzanych ===
+function deadlineForFilm(film) {
+  const progress = Number(film.progress) || 0;
+  if (progress < 100) return null; // <— kluczowe
+  const del = Number(film.deleteAt);
+  if (Number.isFinite(del)) return del;
+
+  const watchedAt = Number(film.watchedAt);
+  if (Number.isFinite(watchedAt) && watchedAt > 0) {
+    return watchedAt + 7 * 86400000;
+  }
+  return null;
+}
+
+function deadlineForSeries(series) {
+  const progress = Number(series.progress) || 0;
+  if (progress < 100) return null; // <— kluczowe
+  const del = Number(series.deleteAt);
+  return Number.isFinite(del) ? del : null; // dla seriali polegamy na deleteAt z backendu
+}
+
+// === 3) FILMY — render z poprawnym warunkiem 100% ===
 async function loadPlexFilms() {
   const loader = document.getElementById("loading-message");
   const container = document.getElementById("available-films");
+  if (!loader || !container) return;
 
   loader.style.display = "block";
   container.innerHTML = "";
@@ -1497,208 +1831,117 @@ async function loadPlexFilms() {
     loader.style.display = "none";
 
     data.forEach(film => {
+      const deadline = deadlineForFilm(film); // null albo timestamp
+
       const div = document.createElement("div");
       div.className = "browse-result";
-
-      const watchedAt = film.watchedAt ? new Date(film.watchedAt).getTime() : null;
-      const expiresAt = film.deleteAt || (watchedAt ? watchedAt + 7 * 86400000 : null);
-      const countdown = film.deleteAt ? getCountdown(film.deleteAt) : "–";
-
       div.innerHTML = `
         <img src="${film.thumb || 'https://via.placeholder.com/100x150'}" />
         <div class="result-content">
           <b>${film.title}</b>
-          <div class="progress-bar">
-            <div class="progress-bar-inner" style="width: ${film.progress}%; background: yellow;"></div>
-          </div>
+          <div class="progress-bar"><div class="progress-bar-inner" style="width:${film.progress}%;"></div></div>
           <small>${film.progress}% obejrzane</small>
 
-          <div style="margin-top: 0.5rem; text-align: right;">
-            <div style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-              <span data-timer="${film.id}">${countdown}</span>
-              ${film.deleteAt ? `<button class="reset-btn" onclick="resetDeleteTimer('${film.id}')">🔁 Resetuj</button>` : ""}
+          <div style="margin-top:.5rem; text-align:right;">
+            <div style="font-size:.85rem; display:flex; justify-content:space-between; align-items:center;">
+              <span data-timer="${film.id}" ${deadline ? `data-target="${deadline}"` : ""}>
+                ${deadline ? getCountdown(deadline) : "–"}
+              </span>
+              ${deadline ? `<button class="reset-btn" onclick="resetDeleteTimer('${film.id}')">🔁 Resetuj</button>` : ""}
             </div>
             <button onclick="confirmDelete('${film.id}', '${film.title}', 'film')">🗑️ Usuń teraz</button>
           </div>
         </div>
       `;
-
       container.appendChild(div);
     });
 
+    ensureCountdownLoop();
   } catch (err) {
     loader.innerHTML = "❌ Błąd ładowania filmów.";
     console.error(err);
   }
 }
 
-
-function getCountdown(targetTime) {
-  const now = Date.now();
-  const diff = targetTime - now;
-  if (diff <= 0) return "✅ Do usunięcia";
-
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
-
-  if (days > 0) return `⏳ ${days}d ${hours}h`;
-  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
-  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
-  return `⏳ ${seconds}s`;
-}
-
-async function deletePlexItem(item) {
-  const confirmed = confirm(`⚠️ Czy na pewno chcesz trwale usunąć "${item.title}" z Plex i dysku?`);
-  if (!confirmed) return;
-
-  try {
-    const res = await fetch("/plex/delete", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: item.id,
-        title: item.title,
-        path: item.path,
-        type: item.type
-      })
-    });
-
-    const result = await res.json();
-
-    if (res.ok && result.success) {
-      alert("✅ Usunięto");
-      if (item.type === "series") loadPlexSeries();
-      else if (item.type === "film") loadPlexFilms();
-    } else {
-      alert("❌ Błąd usuwania: " + (result.error || "Nieznany błąd"));
-    }
-  } catch (e) {
-    console.error("Błąd usuwania:", e);
-    alert("❌ Błąd połączenia z serwerem");
-  }
-}
-
-
-async function loadPlexSeries() {
+// === 4) SERIALE — analogicznie z warunkiem 100% ===
+async function loadPlexSeries(){
   const loader = document.getElementById("loading-message");
   const container = document.getElementById("available-series");
+  if (!container) return;
 
   loader.style.display = "block";
   container.innerHTML = "";
 
-  try {
+  try{
     const res = await fetch("/plex/series");
     const data = await res.json();
     loader.style.display = "none";
 
     data.forEach(series => {
-      const title = series.title;
-      const thumb = series.thumb || "";
-      const progress = series.progress;
-      const episodes = series.episodes;
-      const deleteAt = series.deleteAt;
-      const countdown = deleteAt ? getCountdown(deleteAt) : "";
+      const deadline = deadlineForSeries(series);
+      const seasons = computeSeasonStats(series.episodes || []);
 
-      const seasons = {};
-      episodes.forEach(ep => {
-        if (!seasons[ep.season]) seasons[ep.season] = [];
-        seasons[ep.season].push(ep);
-      });
+      const chips = Object.entries(seasons)
+        .sort((a,b)=>Number(a[0])-Number(b[0]))
+        .map(([sn,st]) => `
+          <div class="chip ${st.done===st.total && st.total>0 ? 'done':''}">
+            <span class="num">Sezon ${sn}</span>
+            <span class="meta">${st.done}/${st.total}</span>
+          </div>`).join("");
 
-      const wrapper = document.createElement("details");
-      wrapper.className = "series-card";
-
-      let head = `
-        <summary class="series-header">
-          <img src="${thumb}" alt="${title}" />
-          <div class="series-info">
-            <h3>${title}</h3>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width:${progress}%"></div>
+      const card = document.createElement("details");
+      card.className = "series-card";
+      card.innerHTML = `
+        <summary class="series-top">
+          <img class="series-poster" src="${esc(series.thumb||'')}" alt="${esc(series.title)}">
+          <div class="series-main">
+            <h3 class="series-title">${esc(series.title)}</h3>
+            <div class="series-progress">
+              <div class="bar"><div class="fill" style="width:${series.progress}%"></div></div>
+              <small>${series.progress}% obejrzane</small>
             </div>
-            <span>${progress}% obejrzane</span>
-            ${deleteAt ? `
-              <div style="text-align: right; margin-top: 0.4rem;">
-                <div style="font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-                  <span data-timer-id="${series.id}">${countdown}</span>
-                  <button class="reset-btn" onclick="resetDeleteTimer('${series.id}')">🔁 Resetuj</button>
-                </div>
-                <button onclick="confirmDelete('${series.id}', '${series.title}', 'series')">🗑️ Usuń teraz</button>
-              </div>
-            ` : ""}
           </div>
+          <div class="series-caret">›</div>
         </summary>
+
+        <div class="series-timer">
+          ${deadline ? `
+            <span data-timer-id="${series.id}" data-target="${deadline}">${getCountdown(deadline)}</span>
+            <button class="reset-btn" onclick="event.stopPropagation(); resetDeleteTimer('${series.id}')">🔁 Resetuj</button>
+          ` : ``}
+          <button class="btn-danger" onclick="event.stopPropagation(); confirmDelete('${series.id}','${esc(series.title)}','series')">🗑️ Usuń</button>
+        </div>
+
+        ${chips ? `<div class="season-chips">${chips}</div>` : ``}
+
+        <div class="series-seasons">
+          ${Object.entries(seasons).map(([sn, st]) => `
+            <details>
+              <summary>📁 Sezon ${sn} — ${st.done}/${st.total}</summary>
+              <ul>
+                ${st.list.sort((a,b)=>a.episode - b.episode).map(ep => `
+                  <li>
+                    ${ep.episode}. ${esc(ep.title)} — <b>${ep.progress}%</b>
+                    <button style="font-size:.75rem; margin-left:10px;"
+                      onclick="event.stopPropagation(); confirmDelete('${ep.id}','${esc(ep.title)}','episode')">🗑️</button>
+                  </li>`).join("")}
+              </ul>
+            </details>
+          `).join("")}
+        </div>
       `;
 
-      let body = `<div class="series-seasons">`;
-      for (const [seasonNum, eps] of Object.entries(seasons)) {
-        body += `
-          <details>
-            <summary>📁 Sezon ${seasonNum}</summary>
-            <ul>
-              ${eps.map(ep => `
-                <li>
-                  🎬 ${ep.episode}. ${ep.title} – <b>${ep.progress}%</b>
-                  <button style="font-size: 0.7rem; margin-left: 10px;" onclick="confirmDelete('${ep.id}', '${ep.title}', 'episode')">
-                    🗑️
-                  </button>
-                </li>
-              `).join("")}
-            </ul>
-          </details>
-        `;
-      }
-      body += `</div>`;
-
-      wrapper.innerHTML = head + body;
-      container.appendChild(wrapper);
+      container.appendChild(card);
     });
 
-  } catch (err) {
+    ensureCountdownLoop();
+  }catch(e){
     loader.innerHTML = "❌ Błąd ładowania seriali.";
-    console.error(err);
+    console.error(e);
   }
 }
 
-function getCountdown(targetTime) {
-  const now = Date.now();
-  const diff = targetTime - now;
-
-  if (diff <= 0) return "✅ Do usunięcia";
-
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
-
-  if (days > 0) return `⏳ ${days}d ${hours}h`;
-  if (hours > 0) return `⏳ ${hours}h ${minutes}m`;
-  if (minutes > 0) return `⏳ ${minutes}m ${seconds}s`;
-  return `⏳ ${seconds}s`;
-}
-
-function confirmDelete(id, title, type) {
-  if (confirm(`⚠️ Czy na pewno chcesz trwale usunąć "${title}" z Plex i dysku?`)) {
-    fetch(`/plex/delete`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, title, type })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert("✅ Usunięto");
-        location.reload();
-      } else {
-        alert("❌ Błąd usuwania: " + (data.error || "Nieznany"));
-      }
-    })
-    .catch(() => alert("❌ Błąd usuwania"));
-  }
-}
-
+// === 5) Reset timera — natychmiast aktualizuje wszystkie kapsle tej pozycji ===
 async function resetDeleteTimer(id) {
   if (!confirm("Zresetować czas usunięcia (7 dni od teraz)?")) return;
 
@@ -1708,38 +1951,301 @@ async function resetDeleteTimer(id) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
     });
-
     const data = await res.json();
 
-    if (res.ok && data.success) {
-      alert("🕒 Zresetowano czas usunięcia");
-
-      // 🔄 Zaktualizuj tylko tekst countdownu
-      const timerEl = document.querySelector(`[data-timer-id="${id}"]`);
-      if (timerEl && data.newDeleteAt) {
-        timerEl.textContent = getCountdown(data.newDeleteAt);
-
-        // ⏱️ Usuń poprzedni interwał jeśli istnieje
-        if (timerEl._interval) {
-          clearInterval(timerEl._interval);
-        }
-
-        // 🔁 Dynamiczne odliczanie co minutę
-        timerEl._interval = setInterval(() => {
-          timerEl.textContent = getCountdown(data.newDeleteAt);
-        }, 60000);
-      }
-
+    if (res.ok && data.success && Number.isFinite(data.newDeleteAt)) {
+      document.querySelectorAll(`[data-timer="${id}"], [data-timer-id="${id}"]`).forEach(el => {
+        el.dataset.target = String(data.newDeleteAt);
+        el.textContent = getCountdown(data.newDeleteAt);
+      });
+      ensureCountdownLoop();
     } else {
       alert("❌ Błąd resetowania: " + (data.error || "nieznany błąd"));
     }
-
   } catch (e) {
     console.error("❌ Błąd połączenia:", e);
     alert("❌ Błąd połączenia z serwerem");
   }
 }
 
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const select = document.getElementById("global-speed-limit");
+  const feedback = document.getElementById("global-speed-feedback");
+
+  async function applyLimit(mbs) {
+    try {
+      select.disabled = true;
+      feedback.textContent = mbs > 0 ? `Ustawiam ${mbs} MB/s…` : "Wyłączam limit (Unlimited)…";
+
+      const res = await fetch("/set-global-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: mbs }) // MB/s
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd ustawiania limitu");
+
+      const shown = (Number(data.limit_mbs) > 0) ? `${data.limit_mbs} MB/s` : "Unlimited";
+      feedback.textContent = `✅ Globalny limit pobierania: ${shown}`;
+      localStorage.setItem("global-speed-limit", String(mbs));
+    } catch (err) {
+      feedback.textContent = `❌ ${err.message || err}`;
+    } finally {
+      select.disabled = false;
+    }
+  }
+
+  // Przywróć ostatni wybór z localStorage (i od razu go ustaw)
+  const saved = localStorage.getItem("global-speed-limit");
+  if (saved !== null) {
+    select.value = saved;
+    applyLimit(Number(saved));
+  } else {
+    feedback.textContent = "Aktualnie: Unlimited";
+  }
+
+  // Zmiana z UI -> API
+  select.addEventListener("change", (e) => {
+    const mbs = parseFloat(e.target.value);
+    applyLimit(isNaN(mbs) ? 0 : mbs);
+  });
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        // prosty hot-update: jeśli pojawi się nowy SW, odśwież po instalacji
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('🔄 Aktualizacja Piotrflix dostępna – odświeżam…');
+              // możesz zamiast tego pokazać własny toast/btn
+              location.reload();
+            }
+          });
+        });
+      } catch (e) { console.warn('SW error', e); }
+    });
+
+    // ...
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('install-btn');
+    if (installBtn) installBtn.classList.remove('hidden');
+  });
+
+  // zamiast document.getElementById('install-btn').onclick = ...
+  (function(){
+    const installBtn = document.getElementById('install-btn');
+    if (!installBtn) return;
+    installBtn.onclick = async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    };
+  })();
+  }
+
+/* ====== MOTYW – zapamiętaj w localStorage ====== */
+document.addEventListener("DOMContentLoaded", () => {
+  const toggle = document.getElementById('theme-toggle');
+  const savedTheme = localStorage.getItem('piotrflix-theme') || 'dark';
+  document.body.setAttribute('data-theme', savedTheme);
+  if (toggle) toggle.checked = (savedTheme === 'light');
+  if (toggle) toggle.addEventListener('change', () => {
+    const theme = toggle.checked ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('piotrflix-theme', theme);
+  });
+});
+
+/* ====== „Dostępne” — poprawna inicjalizacja zakładki po starcie ====== */
+document.addEventListener("DOMContentLoaded", () => {
+  // upewnij się, że handler zakładek już istnieje
+  const filmsTab = document.querySelector("#available-tabs [data-available-tab='films']");
+  const filmsPane = document.getElementById("available-films");
+  if (filmsTab && filmsPane) {
+    // ustaw widoki i od razu wczytaj filmy (klik mógł nie zadziałać wcześniej)
+    document.querySelectorAll("#available-tabs .search-tab").forEach(t => t.classList.remove("active"));
+    filmsTab.classList.add("active");
+    document.querySelectorAll(".available-tab-content").forEach(s => s.classList.remove("active"));
+    filmsPane.classList.add("active");
+    if (typeof loadPlexFilms === "function") loadPlexFilms();
+  }
+});
+
+/* ===== Helper do bezpiecznego cytowania w atrybutach JS ===== */
+function jsq(s){ return JSON.stringify(String(s ?? "")); }
+
+/* ====== loadPlexSeries – użyj #plex-series jeśli istnieje ====== */
+if (typeof loadPlexSeries === "function") {
+  const _originalLoadPlexSeries = loadPlexSeries;
+}
+window.loadPlexSeries = async function(){
+  const loader = document.getElementById("loading-message");
+  const container = document.getElementById("plex-series") || document.getElementById("available-series");
+  if (loader) loader.style.display = "block";
+  if (container) container.innerHTML = "";
+
+  try{
+    const res = await fetch("/plex/series");
+    const data = await res.json();
+    if (loader) loader.style.display = "none";
+
+    data.forEach(series => {
+      const deadline = (typeof deadlineForSeries === "function") ? deadlineForSeries(series) : null;
+
+      // zgrupuj odcinki po sezonach
+      const seasons = {};
+      (series.episodes || []).forEach(ep => (seasons[ep.season] ||= []).push(ep));
+
+      // karta
+      const det = document.createElement("details");
+      det.className = "series-card";
+
+      const thumb = series.thumb || 'https://via.placeholder.com/150x225?text=%20';
+      const head = `
+        <summary class="series-top">
+          <img class="series-poster" src="${thumb}" alt=${jsq(series.title)} loading="lazy" />
+          <div class="series-main">
+            <h3 class="series-title">${esc(series.title)}</h3>
+            <div class="series-progress">
+              <div class="bar"><div class="fill" style="width:${Number(series.progress)||0}%"></div></div>
+              <small>${Number(series.progress)||0}% obejrzane</small>
+            </div>
+          </div>
+          <div class="series-caret">›</div>
+        </summary>
+
+        <div class="series-timer">
+          ${
+            deadline
+              ? `
+                <span data-timer-id="${series.id}" data-target="${deadline}">${getCountdown(deadline)}</span>
+                <button class="reset-btn" onclick='event.stopPropagation(); resetDeleteTimer(${jsq(series.id)})'>🔁 Resetuj</button>
+              `
+              : ``
+          }
+          <button class="btn-danger" onclick='event.stopPropagation(); confirmDelete(${jsq(series.id)}, ${jsq(series.title)}, "series")'>🗑️ Usuń</button>
+        </div>
+      `;
+
+      let body = `<div class="series-seasons">`;
+      for (const [seasonNum, eps] of Object.entries(seasons)) {
+        body += `
+          <details>
+            <summary>📁 Sezon ${seasonNum}</summary>
+            <ul>
+              ${eps
+                .sort((a,b)=> (a.episode||0) - (b.episode||0))
+                .map(ep => `
+                  <li>
+                    ${ep.episode}. ${esc(ep.title)} — <b>${Number(ep.progress)||0}%</b>
+                    <button style="font-size:.75rem; margin-left:10px;"
+                      onclick='event.stopPropagation(); confirmDelete(${jsq(ep.id)}, ${jsq(ep.title)}, "episode")'>🗑️</button>
+                  </li>
+                `).join("")}
+            </ul>
+          </details>
+        `;
+      }
+      body += `</div>`;
+
+      det.innerHTML = head + body;
+      container.appendChild(det);
+    });
+
+    if (typeof ensureCountdownLoop === "function") ensureCountdownLoop();
+  }catch(e){
+    if (loader) loader.innerHTML = "❌ Błąd ładowania seriali.";
+    console.error(e);
+  }
+};
+
+/* ====== Potwierdzenie + kasowanie (film/serial/odcinek) ====== */
+function confirmDelete(id, title, type){
+  const modal = document.getElementById('confirm-modal');
+  const msg   = document.getElementById('confirm-message');
+  const yes   = document.getElementById('confirm-yes');
+  const no    = document.getElementById('confirm-no');
+
+  if(!modal || !yes || !no || !msg){
+    if (confirm(`Usunąć "${title}"?`)) doDelete(id, type);
+    return;
+  }
+
+  msg.textContent = `Czy na pewno chcesz usunąć: ${title}?`;
+  modal.classList.remove('hidden');
+  modal.classList.add('show');
+
+  const close = () => { modal.classList.remove('show'); modal.classList.add('hidden'); };
+
+  yes.onclick = () => { close(); doDelete(id, type); };
+  no.onclick  = () => { close(); };
+
+  // klik w tło
+  modal.onclick = (e) => { if (e.target === modal) close(); };
+  // ESC
+  const esc = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc, { once:true });
+}
+
+async function doDelete(id, type){
+  try{
+    const force = (type !== 'film'); // serial/episode -> rekurencyjnie
+    const res = await fetch('/plex/delete', {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id, force })
+    });
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      alert('❌ Błąd usuwania: ' + (data.error || 'nieznany'));
+      return;
+    }
+
+    if (typeof showToast === "function") showToast('🗑️ Usunięto');
+
+    // odśwież aktywną zakładkę "Dostępne"
+    const activeAvail = document.querySelector('#available-tabs .search-tab.active');
+    if (activeAvail?.dataset.availableTab === 'series') {
+      if (typeof loadPlexSeries === "function") loadPlexSeries();
+    } else if (activeAvail?.dataset.availableTab === 'films') {
+      if (typeof loadPlexFilms === "function") loadPlexFilms();
+    }
+  }catch(e){
+    console.error(e);
+    alert('❌ Błąd połączenia przy usuwaniu');
+  }
+}
+
+/* ====== Utils ====== */
+function computeSeasonStats(episodes){
+  const map = {};
+  for (const ep of (episodes||[])) {
+    const s = ep.season;
+    if (!map[s]) map[s] = { total:0, done:0, list:[] };
+    map[s].total++;
+    map[s].list.push(ep);
+    if ((Number(ep.progress)||0) >= 100) map[s].done++;
+  }
+  return map;
+}
+function esc(s){
+  return String(s||"").replace(/[&<>"']/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+  ));
+}
 </script>
 
 

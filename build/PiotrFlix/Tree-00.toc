@@ -1,5 +1,0 @@
-('templates',
- 'templates',
- [],
- 'DATA',
- [('templates\\index.html', 'templates\\index.html', 'DATA')])

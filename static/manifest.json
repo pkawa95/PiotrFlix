@@ -1,27 +1,89 @@
 {
+  "id": "pl.piotrflix.web",
   "name": "Piotrflix",
   "short_name": "Piotrflix",
-  "start_url": "/",
+  "description": "Piotrflix – wyszukuj, pobieraj i przeglądaj treści. PWA z trybem jasnym/ciemnym i wsparciem dla .torrent.",
+  "lang": "pl-PL",
+  "dir": "ltr",
+
+  "start_url": "/?source=pwa",
   "scope": "/",
-  "display": "fullscreen",
-  "background_color": "#000000",
-  "theme_color": "#000000",
-  "orientation": "portrait",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+
+  "background_color": "#0b0b12",
+  "theme_color": [
+    { "media": "(prefers-color-scheme: dark)",  "color": "#0b0b12" },
+    { "media": "(prefers-color-scheme: light)", "color": "#f5f7fb" }
+  ],
+
+  "categories": ["entertainment", "video", "utilities"],
+
   "icons": [
+    { "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/static/icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+
+  "shortcuts": [
     {
-      "src": "/static/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "name": "Torrenty",
+      "short_name": "Torrenty",
+      "url": "/?section=torrents",
+      "icons": [{ "src": "/static/shortcut-torrents.png", "sizes": "96x96", "type": "image/png", "purpose": "any" }]
     },
     {
-      "src": "/static/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "name": "Szukaj",
+      "short_name": "Szukaj",
+      "url": "/?section=search",
+      "icons": [{ "src": "/static/shortcut-search.png", "sizes": "96x96", "type": "image/png", "purpose": "any" }]
     },
     {
-      "src": "/static/apple-touch-icon.png",
-      "type": "image/png",
-      "sizes": "180x180"
+      "name": "Przeglądaj",
+      "short_name": "Przeglądaj",
+      "url": "/?section=browse",
+      "icons": [{ "src": "/static/shortcut-browse.png", "sizes": "96x96", "type": "image/png", "purpose": "any" }]
+    },
+    {
+      "name": "Dostępne",
+      "short_name": "Dostępne",
+      "url": "/?section=available",
+      "icons": [{ "src": "/static/shortcut-available.png", "sizes": "96x96", "type": "image/png", "purpose": "any" }]
     }
-  ]
+  ],
+
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [{
+        "name": "files",
+        "accept": ["application/x-bittorrent", ".torrent"]
+      }]
+    }
+  },
+
+  "file_handlers": [
+    {
+      "action": "/open-torrent",
+      "accept": {
+        "application/x-bittorrent": [".torrent"],
+        "application/octet-stream": [".torrent"]
+      },
+      "icons": [{ "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png" }],
+      "launch_type": "multiple-clients"
+    }
+  ],
+
+  "launch_handler": { "client_mode": "focus-existing" },
+
+  "prefer_related_applications": false
 }

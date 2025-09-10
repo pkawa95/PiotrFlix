@@ -134,9 +134,10 @@ def _start_all_backgrounds():
     run_cleanup_loop(10)
     start_poster_sweeper(every_minutes=120, rebuild_before=False, force=False)  # ⬅️ TU
 
-def start_flask_blocking(host="127.0.0.1", port=5000):
-    """Uruchamia serwer Flask w trybie blokującym (do odpalenia w wątku przez GUI)."""
-    app.run(host=host, port=port, debug=False, use_reloader=False, threaded=True)
+def start_flask_blocking(host=None, port=None):
+    h = host or os.environ.get("PFLIX_BIND", "0.0.0.0")
+    p = int(port or os.environ.get("PFLIX_PORT", "5000"))
+    app.run(host=h, port=p, debug=False, use_reloader=False, threaded=True)
 
 def init_backend_after_splash():
     """

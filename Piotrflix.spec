@@ -1,46 +1,113 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
-from PyInstaller.utils.hooks import collect_dynamic_libs
 
-datas = [('static', 'static'), ('templates', 'templates'), ('manifest.json', '.'), ('sw.js', '.')]
-binaries = []
-datas += collect_data_files('libtorrent')
-binaries += collect_dynamic_libs('libtorrent')
+import os
+import glob
+from PyInstaller.utils.hooks import collect_submodules
 
+block_cipher = None
+
+APP_NAME = "PiotrFlix"
+ENTRY    = "gui_main.py"
+ICON     = "static/icon.ico" if os.path.isfile("static/icon.ico") else None
+
+# wyklucz inne bindingi Qt (żeby nie było konfliktu z PySide6)
+EXCLUDES = ["PyQt5", "PyQt5.*", "PyQt6", "PyQt6.*"]
+
+# ——— HIDDEN IMPORTS ———
+#  - 'app' bo ładujesz backend dynamicznie (importlib)
+#  - bs4/soupsieve, plexapi, selenium, libtorrent
+HIDDEN = [
+    "app",
+    "bs4",
+    "soupsieve",
+    "libtorrent",
+    "selenium",
+    "selenium.webdriver",
+    "selenium.webdriver.common",
+    "selenium.webdriver.chrome",
+    "selenium.webdriver.support",
+    "selenium.webdriver.support.expected_conditions",
+    "selenium.webdriver.common.by",
+] \
++ collect_submodules("PySide6") \
++ collect_submodules("plexapi") \
++ collect_submodules("bs4") \
++ collect_submodules("soupsieve")
+
+# ——— DATAS (zasoby nie-Python) ———
+DATAS = [
+    ("templates", "templates"),
+    ("static",    "static"),
+]
+
+# pliki JSON/JS z katalogu głównego, które chcesz mieć w dist/
+for fn in [
+    "available_cache.json",
+    "poster_cache.json",
+    "torrent_history.json",
+    "version.json",
+    "manifest.json",
+    "sw.js",
+]:
+    if os.path.isfile(fn):
+        DATAS.append((fn, "."))
+
+# dołóż updater.exe jeśli zbudowany
+if os.path.isfile("updater.exe"):
+    DATAS.append(("updater.exe", "."))
+
+# (opcjonalnie) chromedriver, jeśli go dystrybuujesz ręcznie
+for cand in [
+    "chromedriver.exe",
+    os.path.join("tools", "chromedriver.exe"),
+]:
+    if os.path.isfile(cand):
+        DATAS.append((cand, "."))
 
 a = Analysis(
-    ['app.py'],
-    pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=[],
+    [ENTRY],
+    pathex=["."],
+    binaries=[],
+    datas=DATAS,
+    hiddenimports=HIDDEN,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=EXCLUDES,
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
-    optimize=0,
 )
-pyz = PYZ(a.pure)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
+    a.zipfiles,
     a.datas,
     [],
-    name='Piotrflix',
+    name=APP_NAME,               # wynikowy exe: PiotrFlix.exe
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-    icon=['static\\favicon.ico'],
+    console=False,               # GUI
+    icon=ICON,
+)
+
+# onedir: wszystko w jednym katalogu dist/PiotrFlix/
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name=APP_NAME,
 )

@@ -1,4 +1,4 @@
-# gui_onboarding.py — PyQt6 onboarding dla Piotrflix
+# gui_onboarding.py — PySide6 onboarding dla Piotrflix
 # 1 przycisk „Połącz z Plex”, logo, stały rozmiar, nowoczesny styling,
 # walidacja pól + komunikaty krok po kroku, poprawiona obsługa ścieżek sieciowych
 from __future__ import annotations
@@ -15,7 +15,7 @@ import warnings
 from typing import Optional, List
 from xml.etree import ElementTree as ET
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from config_store import load_config, save_config
 
 # toleruj self-signed przy /identity
@@ -47,7 +47,6 @@ def normalize_dir_path(p: str) -> str:
 
     # file:// URI
     if s.lower().startswith("file://"):
-        # użyj QUrl, bo ładnie zdejmuje %-encoding
         url = QtCore.QUrl(s)
         lf = url.toLocalFile()
         if lf:
@@ -55,7 +54,6 @@ def normalize_dir_path(p: str) -> str:
 
     # Windows: SMB uri -> UNC
     if os.name == "nt" and s.lower().startswith("smb://"):
-        # smb://server/share/dir -> \\server\share\dir
         parts = s[6:]  # po 'smb://'
         parts = parts.strip("/")
         if parts:
@@ -65,7 +63,6 @@ def normalize_dir_path(p: str) -> str:
                 if len(segs) > 2:
                     s += "\\" + "\\".join(segs[2:])
             else:
-                # niekompletne smb:// – zostaw do dalszej walidacji
                 s = r"\\" + parts.replace("/", "\\")
         else:
             s = r"\\"
@@ -73,17 +70,12 @@ def normalize_dir_path(p: str) -> str:
     # Porządkowanie separatorów/trailing slashy
     if os.name == "nt":
         s = s.replace("/", "\\")
-        # usuń trailing backslash, ale NIE z korzenia udziału: \\server\share
         if len(s) > 2 and s.endswith("\\"):
-            # zostaw jeśli to dokładnie \\server\share\
             if not _UNC_RE.match(s[:-1]):
                 s = s.rstrip("\\")
-        # Duże/małe znaki – normalizacja systemowa
         s = os.path.normpath(s)
     else:
-        # na POSIX zostaw forward slashe i 'smb://…' nietknięte
         if s.lower().startswith("smb://"):
-            # usuwamy podwójne slashe w końcówkach
             if len(s) > 6 and s.endswith("/"):
                 s = s.rstrip("/")
             return s
@@ -101,27 +93,20 @@ def looks_like_valid_dir(p: str) -> bool:
       - istniejące katalogi (os.path.isdir)
       - UNC: \\server\share(\sub\sub)*
       - POSIX SMB-URI: smb://server/share(/sub)*
-    Dzięki temu użytkownik może wpisać udział, który aktualnie nie jest dostępny,
-    ale format jest poprawny.
     """
     if not p:
         return False
 
-    # Istniejący katalog
     try:
         if os.path.isdir(p):
             return True
     except Exception:
-        # np. brak uprawnień – nie traktuj jako błąd formatu
         pass
 
-    # Akceptuj poprawny format UNC (Windows)
     if os.name == "nt" and _UNC_RE.match(p):
         return True
 
-    # Akceptuj poprawny format SMB URI (POSIX lub gdy user świadomie chce URI)
     if p.lower().startswith("smb://"):
-        # smb://server/share[/sub]
         rest = p[6:]
         if rest and "/" in rest:
             host, share_and_more = rest.split("/", 1)
@@ -129,7 +114,6 @@ def looks_like_valid_dir(p: str) -> bool:
                 return True
         return False
 
-    # Litera dysku bez ścieżki? (np. 'Z:' – za mało)
     if os.name == "nt" and re.match(r"^[a-zA-Z]:$", p):
         return False
 
@@ -269,17 +253,17 @@ def normalize_plex_base_url(uri: str, force_http: bool = True, default_port: int
 
 # ─────────────── Worker: PIN ➜ autodetect ───────────────
 class PlexConnectWorker(QtCore.QObject):
-    progress = QtCore.pyqtSignal(str)
-    partialToken = QtCore.pyqtSignal(str)
-    partialServer = QtCore.pyqtSignal(str)
-    success = QtCore.pyqtSignal(str, str)  # (base_url, token)
-    failed = QtCore.pyqtSignal(str)
+    progress = QtCore.Signal(str)
+    partialToken = QtCore.Signal(str)
+    partialServer = QtCore.Signal(str)
+    success = QtCore.Signal(str, str)  # (base_url, token)
+    failed = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._abort = False
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def run(self):
         try:
             # 1) PIN login
@@ -357,7 +341,7 @@ class OnboardingWindow(QtWidgets.QWidget):
         # Tytuł i stały rozmiar (brak rozciągania/maksymalizacji)
         self.setWindowTitle("Piotrflix – Onboarding")
         self.setFixedSize(860, 600)
-        self.setWindowFlag(QtCore.Qt.WindowType.MSWindowsFixedSizeDialogHint, True)
+        self.setWindowFlag(QtCore.Qt.MSWindowsFixedSizeDialogHint, True)
 
         # Styl nowoczesny (QSS)
         self._apply_styles()
@@ -376,14 +360,14 @@ class OnboardingWindow(QtWidgets.QWidget):
         # ── LOGO (wyśrodkowane) ──
         logo_path = _resource_path("static", "logo.png")
         logo_lbl = QtWidgets.QLabel(objectName="Logo")
-        logo_lbl.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter)
+        logo_lbl.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         pix = QtGui.QPixmap(logo_path)
         if not pix.isNull():
-            scaled = pix.scaledToWidth(240, QtCore.Qt.TransformationMode.SmoothTransformation)
+            scaled = pix.scaledToWidth(240, QtCore.Qt.SmoothTransformation)
             logo_lbl.setPixmap(scaled)
         else:
             logo_lbl.setText("Piotrflix")
-            logo_lbl.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
+            logo_lbl.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Bold))
         root.addWidget(logo_lbl)
 
         # karta z formularzem
@@ -395,8 +379,8 @@ class OnboardingWindow(QtWidgets.QWidget):
 
         # FORM
         form = QtWidgets.QFormLayout()
-        form.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
-        form.setFormAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        form.setLabelAlignment(QtCore.Qt.AlignLeft)
+        form.setFormAlignment(QtCore.Qt.AlignTop)
         form.setHorizontalSpacing(16)
         form.setVerticalSpacing(12)
         card.layout().addLayout(form)
@@ -437,13 +421,11 @@ class OnboardingWindow(QtWidgets.QWidget):
         form.addRow("Status:", badges_w)
 
         # pola readonly
-        self.plex_url_edit = QtWidgets.QLineEdit(self.cfg["plex"].get("base_url", ""),
-                                                 objectName="LineReadOnly")
+        self.plex_url_edit = QtWidgets.QLineEdit(self.cfg["plex"].get("base_url", ""), objectName="LineReadOnly")
         self.plex_url_edit.setReadOnly(True)
         form.addRow("Adres serwera Plex:", self.plex_url_edit)
 
-        self.token_edit = QtWidgets.QLineEdit(self.cfg["plex"].get("token", ""),
-                                              objectName="LineReadOnly")
+        self.token_edit = QtWidgets.QLineEdit(self.cfg["plex"].get("token", ""), objectName="LineReadOnly")
         self.token_edit.setReadOnly(True)
         self.token_edit.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
         form.addRow("Plex Token:", self.token_edit)
@@ -467,7 +449,7 @@ class OnboardingWindow(QtWidgets.QWidget):
 
         # stopka
         footer = QtWidgets.QLabel("© 2025 Piotr Kawa", objectName="Footer")
-        footer.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+        footer.setAlignment(QtCore.Qt.AlignHCenter)
         root.addWidget(footer)
 
         # status wg configu
@@ -578,10 +560,11 @@ class OnboardingWindow(QtWidgets.QWidget):
         self._update_next_steps()
 
     def _pick_movies(self):
-        # użyj natywnego dialogu (lepszy dla UNC na Windows)
         start = self.movies_edit.text().strip() or QtCore.QDir.homePath()
-        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Wybierz folder z filmami", start,
-                                                          QtWidgets.QFileDialog.Option.ShowDirsOnly)
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Wybierz folder z filmami", start,
+            QtWidgets.QFileDialog.ShowDirsOnly
+        )
         if path:
             path = normalize_dir_path(path)
             self.movies_edit.setText(path)
@@ -590,8 +573,10 @@ class OnboardingWindow(QtWidgets.QWidget):
 
     def _pick_series(self):
         start = self.series_edit.text().strip() or QtCore.QDir.homePath()
-        path = QtWidgets.QFileDialog.getExistingDirectory(self, "Wybierz folder z serialami", start,
-                                                          QtWidgets.QFileDialog.Option.ShowDirsOnly)
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Wybierz folder z serialami", start,
+            QtWidgets.QFileDialog.ShowDirsOnly
+        )
         if path:
             path = normalize_dir_path(path)
             self.series_edit.setText(path)
@@ -766,15 +751,15 @@ def run_onboarding() -> dict:
     # Ciemny motyw (spójny z QSS)
     app.setStyle("Fusion")
     palette = QtGui.QPalette()
-    palette.setColor(QtGui.QPalette.ColorRole.Window, QtGui.QColor(26, 26, 31))
-    palette.setColor(QtGui.QPalette.ColorRole.WindowText, QtCore.Qt.GlobalColor.white)
-    palette.setColor(QtGui.QPalette.ColorRole.Base, QtGui.QColor(20, 20, 25))
-    palette.setColor(QtGui.QPalette.ColorRole.AlternateBase, QtGui.QColor(32, 32, 40))
-    palette.setColor(QtGui.QPalette.ColorRole.Text, QtCore.Qt.GlobalColor.white)
-    palette.setColor(QtGui.QPalette.ColorRole.Button, QtGui.QColor(40, 40, 48))
-    palette.setColor(QtGui.QPalette.ColorRole.ButtonText, QtCore.Qt.GlobalColor.white)
-    palette.setColor(QtGui.QPalette.ColorRole.Highlight, QtGui.QColor(76, 163, 224))
-    palette.setColor(QtGui.QPalette.ColorRole.HighlightedText, QtCore.Qt.GlobalColor.black)
+    palette.setColor(QtGui.QPalette.Window, QtGui.QColor(26, 26, 31))
+    palette.setColor(QtGui.QPalette.WindowText, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Base, QtGui.QColor(20, 20, 25))
+    palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(32, 32, 40))
+    palette.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Button, QtGui.QColor(40, 40, 48))
+    palette.setColor(QtGui.QPalette.ButtonText, QtCore.Qt.white)
+    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(76, 163, 224))
+    palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
     app.setPalette(palette)
 
     win = OnboardingWindow()

@@ -1,12 +1,22 @@
 {
   "films": [
     {
-      "id": "522",
-      "title": "Beetlejuice Beetlejuice",
-      "thumb": "/static/posters/b8bbcf852b91df401fb9d619237582ecfa8eb7c8.jpg",
+      "id": "2291",
+      "title": "Ballerina. Z uniwersum Johna Wicka",
+      "thumb": "/static/posters/3c5ada283d0208b7b2a3f9a3cbcef0606793b31d.jpg",
       "progress": 0,
       "watchedAt": null,
       "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Ballerina (2025) [1080p] [BluRay] [5.1] [YTS.MX]/Ballerina.2025.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "522",
+      "title": "Beetlejuice Beetlejuice",
+      "thumb": "/static/posters/b8bbcf852b91df401fb9d619237582ecfa8eb7c8.jpg",
+      "progress": 100,
+      "watchedAt": 1757592096000,
+      "deleteAt": 1758196896000,
       "path": "/mch/Plex/Filmy/Beetlejuice Beetlejuice (2024) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.MX]/Beetlejuice.Beetlejuice.2024.1080p.WEBRip.x265.10bit.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     },
@@ -16,7 +26,7 @@
       "thumb": "/static/posters/6c1ee13cd5759b3c03d257d682df707a4541540d.jpg",
       "progress": 100,
       "watchedAt": 1757453835000,
-      "deleteAt": 1758058635000,
+      "deleteAt": 1758114373911,
       "path": "/mch/Plex/Filmy/Belle The Dragon And The Freckled Princess (2021) [720p] [BluRay] [YTS.MX]/Belle.The.Dragon.And.The.Freckled.Princess.2021.720p.BluRay.x264.AAC-[YTS.MX].mp4",
       "type": "film"
     },
@@ -24,10 +34,50 @@
       "id": "686",
       "title": "Blair Witch Project",
       "thumb": "/static/posters/77266fef5a423dfaf43bd800f82c52302c54cb68.jpg",
+      "progress": 51.4,
+      "watchedAt": 1757687269000,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Blair Witch Project (1999) [1080p] [BluRay] [YTS.MX]/The.Blair.Witch.Project.1999.1080p.BluRay.x264.AAC-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2351",
+      "title": "Champion",
+      "thumb": "/static/posters/50767fdf1cc65a0e6a474d9c3769e9b17b925886.jpg",
       "progress": 0,
       "watchedAt": null,
       "deleteAt": null,
-      "path": "/mch/Plex/Filmy/The Blair Witch Project (1999) [1080p] [BluRay] [YTS.MX]/The.Blair.Witch.Project.1999.1080p.BluRay.x264.AAC-[YTS.MX].mp4",
+      "path": "/mch/Plex/Filmy/Undisputed.2002.1080p.BluRay.H264.AAC-RARBG/Undisputed.2002.1080p.BluRay.H264.AAC-RARBG.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2349",
+      "title": "Champion 2",
+      "thumb": "/static/posters/30a3c0955b5b2bdcc0f3b73cf126bc4d8ffc5b96.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Undisputed 2 Last Man Standing (2006) [1080p] [YTS.AG]/Undisputed.2.Last.Man.Standing.2006.1080p.BluRay.x264-[YTS.AG].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2345",
+      "title": "Champion 3: Odkupienie",
+      "thumb": "/static/posters/c626af57c485f5954e2a02c9d43195c6e0ad24ac.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Undisputed 3 Redemption (2010) [1080p] [BluRay] [5.1] [YTS.MX]/Undisputed.3.Redemption.2010.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2340",
+      "title": "Champion 4: Walka o honor",
+      "thumb": "/static/posters/20ebd51d867c17f71c340e7da201478ee4cc21ce.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Boyka Undisputed IV 2016 1080p WEBRip 1.2 GB - iExTV/Boyka Undisputed IV 2016 1080p WEBRip 1.2 GB - iExTV.mp4",
       "type": "film"
     },
     {
@@ -64,8 +114,8 @@
       "id": "787",
       "title": "Dom Bardzo Nawiedzony 2",
       "thumb": "/static/posters/e5543904383bcbd687197269514734017d9d742e.jpg",
-      "progress": 0,
-      "watchedAt": null,
+      "progress": 1.9,
+      "watchedAt": 1757594037000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/A Haunted House 2 (2014)/A.Haunted.House.2.2014.720p.BluRay.x264.YIFY.mp4",
       "type": "film"
@@ -75,7 +125,7 @@
       "title": "Dracula – Wampiry bez Zębów",
       "thumb": "/static/posters/2408f81aa89ca7f33ae7e13b58fe8c0662ffd9e1.jpg",
       "progress": 0,
-      "watchedAt": null,
+      "watchedAt": 1757585712000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Dracula Dead And Loving It (1995) [1080p] [BluRay] [YTS.MX]/Dracula.Dead.And.Loving.It.1995.1080p.BluRay.x264.AAC-[YTS.MX].mp4",
       "type": "film"
@@ -125,7 +175,7 @@
       "title": "Droga bez powrotu 6: Hotel na uboczu",
       "thumb": "/static/posters/5af7f3c38940e5598646a0936a65a92bf5d4be81.jpg",
       "progress": 0,
-      "watchedAt": null,
+      "watchedAt": 1757593430000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Wrong Turn 6 Last Resort (2014) [1080p] [BluRay] [5.1] [YTS.MX]/Wrong.Turn.6.Last.Resort.2014.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
@@ -141,11 +191,21 @@
       "type": "film"
     },
     {
+      "id": "2333",
+      "title": "Dziewiąta Sesja",
+      "thumb": "/static/posters/b733aadc5978c2c306dbb3d79b314a3b31ebc8f1.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Session.9.2001.1080p.BluRay.x264.EAC3-SARTRE/Session.9.2001.1080p.BluRay.x264.EAC3-SARTRE.mkv",
+      "type": "film"
+    },
+    {
       "id": "922",
       "title": "Grimsby",
       "thumb": "/static/posters/b51cdbfd12ff1a5efc2786b1927ede86ef3028c1.jpg",
-      "progress": 0,
-      "watchedAt": null,
+      "progress": 1.4,
+      "watchedAt": 1757592058000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/The Brothers Grimsby (2016) [1080p] [YTS.AG]/The.Brothers.Grimsby.2016.1080p.BluRay.x264-[YTS.AG].mp4",
       "type": "film"
@@ -251,6 +311,26 @@
       "type": "film"
     },
     {
+      "id": "2223",
+      "title": "House on Eden",
+      "thumb": "/static/posters/31c4a2dc3c2a2d474d3d9117604b8d727bf1c55b.jpg",
+      "progress": 100,
+      "watchedAt": 1757603132000,
+      "deleteAt": 1758207932000,
+      "path": "/mch/Plex/Filmy/House On Eden (2025) [1080p] [WEBRip] [5.1] [YTS.MX]/House.On.Eden.2025.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2316",
+      "title": "Inni",
+      "thumb": "/static/posters/02fd21ea4afed687b4f8ac9c3e328e6a8ebab28e.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Others (2001) [REPACK] [1080p] [BluRay] [5.1] [YTS.MX]/The.Others.2001.REPACK.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
       "id": "519",
       "title": "The Jack in the Box: Awakening",
       "thumb": "/static/posters/14f841baf302dd33d4231f85a46def49a5189fdd.jpg",
@@ -291,13 +371,43 @@
       "type": "film"
     },
     {
-      "id": "590",
-      "title": "Koszmar z ulicy Wiązów",
-      "thumb": "/static/posters/e21ac7e9d6c926be8651089e8776c094600eb25a.jpg",
+      "id": "2290",
+      "title": "John Wick 4",
+      "thumb": "/static/posters/5e5ed6a649660fe60d8b15926bdd501192b0e70f.jpg",
       "progress": 0,
       "watchedAt": null,
       "deleteAt": null,
-      "path": "/mch/Plex/Filmy/A Nightmare on Elm Street (2010) [1080p]/A.Nightmare.on.Elm.Street.2010.1080p.BrRip.x264.BOKUTOX.YIFY.mkv-muxed.mp4",
+      "path": "/mch/Plex/Filmy/John Wick Chapter 4 (2023) [1080p] [BluRay] [5.1] [YTS.MX]/John.Wick.Chapter.4.2023.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2323",
+      "title": "Klątwa",
+      "thumb": "/static/posters/b58989f6bd3f57e0030af26a87a7362cc2e466e9.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Grudge (2004) [EXTENDED] [REPACK] [1080p] [BluRay] [5.1] [YTS.MX]/The.Grudge.2004.EXTENDED.REPACK.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2324",
+      "title": "Klątwa 2",
+      "thumb": "/static/posters/4fd2fc2408f0d30f75e350ec039f940b5fef2d4a.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Grudge 2 (2006) [1080p] [BluRay] [5.1] [YTS.MX]/The.Grudge.2.2006.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2321",
+      "title": "Klątwa 3:",
+      "thumb": "/static/posters/f353afb32e1a55ce2733ce6488d95bc6c326efac.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Grudge 3 (2009) [REPACK] [1080p] [BluRay] [5.1] [YTS.MX]/The.Grudge.3.2009.REPACK.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     },
     {
@@ -341,11 +451,21 @@
       "type": "film"
     },
     {
+      "id": "2338",
+      "title": "Lake Mungo",
+      "thumb": "/static/posters/494971c4a4c3842fdcada657f044258ffb780b9e.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Lake Mungo (2008) [BluRay] [1080p] [YTS.AM]/Lake.Mungo.2008.1080p.BluRay.x264-[YTS.AM].mp4",
+      "type": "film"
+    },
+    {
       "id": "2015",
       "title": "Lilo i Stich",
       "thumb": "/static/posters/413d86ae13bc2f33744dabf3d9f731e46043a7bf.jpg",
       "progress": 0,
-      "watchedAt": null,
+      "watchedAt": 1757603955000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Lilo Stitch (2025) [1080p] [BluRay] [5.1] [YTS.MX]/Lilo.Stitch.2025.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
@@ -464,8 +584,8 @@
       "id": "754",
       "title": "Nosferatu",
       "thumb": "/static/posters/6a58aab1813085b53339d8dadd9376c694441d81.jpg",
-      "progress": 10.8,
-      "watchedAt": 1751649577000,
+      "progress": 39.1,
+      "watchedAt": 1757581593000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Nosferatu (2024) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.MX]/Nosferatu.2024.1080p.WEBRip.x265.10bit.AAC5.1-[YTS.MX].mp4",
       "type": "film"
@@ -524,8 +644,8 @@
       "id": "1408",
       "title": "Oppenheimer",
       "thumb": "/static/posters/67349dace0274c13462b85a265e94b6fb945a6b4.jpg",
-      "progress": 36.0,
-      "watchedAt": 1749315934000,
+      "progress": 72.7,
+      "watchedAt": 1757594109000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Oppenheimer (2023) [1080p] [BluRay] [5.1] [YTS.MX]/Oppenheimer.2023.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
@@ -624,8 +744,8 @@
       "id": "642",
       "title": "Paranormal Activity 3",
       "thumb": "/static/posters/5bf44518f5d230d15bc34e7e69c289473dac5ecd.jpg",
-      "progress": 37.7,
-      "watchedAt": 1748898054000,
+      "progress": 39.8,
+      "watchedAt": 1757530672000,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Paranormal Activity 3 (2011) [1080p] [BluRay] [5.1] [YTS.MX]/Paranormal.Activity.3.2011.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
@@ -671,26 +791,6 @@
       "type": "film"
     },
     {
-      "id": "2005",
-      "title": "Przygody Robinsona Crusoe",
-      "thumb": "/static/posters/19494804d22c9ba728546d9dd4ecc257f84d520c.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
-      "path": "/mch/Plex/Filmy/Robinson Crusoe (1954) [1080p] [WEBRip] [YTS.MX]/Robinson.Crusoe.1954.1080p.WEBRip.x264.AAC-[YTS.MX].mp4",
-      "type": "film"
-    },
-    {
-      "id": "2042",
-      "title": "Rambo 3",
-      "thumb": "/static/posters/d2fd01b63dde3f77795bb0d6d01eabe070d3134e.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
-      "path": "/mch/Plex/Filmy/Rambo III (1988) [1080p] [YTS.AG]/Rambo.III.1988.1080p.BluRay.x264-[YTS.AG].mp4",
-      "type": "film"
-    },
-    {
       "id": "644",
       "title": "[REC]",
       "thumb": "/static/posters/cd1fc28dcdeda307a14e8956f978e7adc6c1dd7f.jpg",
@@ -721,6 +821,26 @@
       "type": "film"
     },
     {
+      "id": "2317",
+      "title": "The Ring",
+      "thumb": "/static/posters/979c8dc41aa668090a5d408fdd22a91493704848.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Ring (2002) [REPACK] [1080p] [BluRay] [5.1] [YTS.MX]/The.Ring.2002.REPACK.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2320",
+      "title": "The Ring 2",
+      "thumb": "/static/posters/0288763f4d20d0cc4354fe660c9eaf01af3f22cd.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Ring Two (2005) [BluRay] [1080p] [YTS.AM]/The.Ring.Two.2005.1080p.BluRay.x264-[YTS.AM].mp4",
+      "type": "film"
+    },
+    {
       "id": "728",
       "title": "Shadow Force",
       "thumb": "/static/posters/63ff4902c3d9800d46c19516287c5834dc0e3325.jpg",
@@ -728,6 +848,16 @@
       "watchedAt": null,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Shadow Force (2025) [720p] [WEBRip] [YTS.MX]/Shadow.Force.2025.720p.WEBRip.x264.AAC-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2326",
+      "title": "Shutter - Widmo",
+      "thumb": "/static/posters/2a6465a63757cca79d2366cefac90879d1b20c43.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Shutter (2008) [1080p] [BluRay] [5.1] [YTS.MX]/Shutter.2008.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     },
     {
@@ -811,6 +941,16 @@
       "type": "film"
     },
     {
+      "id": "2344",
+      "title": "Undisputed",
+      "thumb": "/static/posters/c6b1f0c22484253d4e8ac4b8b6012e4192f7db94.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Undisputed (2024) [1080p] [WEBRip] [5.1] [YTS.MX]/Undisputed.2024.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
       "id": "643",
       "title": "Unknown Dimension: The Story of Paranormal Activity",
       "thumb": "/static/posters/643ec7d547076e88a427527a1b89b46db506350e.jpg",
@@ -874,9 +1014,9 @@
       "id": "2216",
       "title": "Zniknięcia",
       "thumb": "/static/posters/54c3992505aac1dc29f7c8f6ff174a92b5d83dd8.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
+      "progress": 100,
+      "watchedAt": 1757588488000,
+      "deleteAt": 1758193288000,
       "path": "/mch/Plex/Filmy/Weapons (2025) [1080p] [WEBRip] [5.1] [YTS.MX]/Weapons.2025.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     }
@@ -886,8 +1026,8 @@
       "id": "1040",
       "title": "Arrow",
       "thumb": "/static/posters/066ccd48a354941a705349bfc66459076e4e6386.jpg",
-      "progress": 47,
-      "watchedAt": 1757281131000,
+      "progress": 48,
+      "watchedAt": 1757627024000,
       "deleteAt": null,
       "episodes": [
         {
@@ -1854,11 +1994,11 @@
           "season": 4,
           "episode": 12,
           "title": "Zrzucone okowy",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2545941,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757623652000,
+          "deleteAt": 1758228452000,
           "id": "1250",
           "parentId": "1040"
         },
@@ -1866,11 +2006,11 @@
           "season": 4,
           "episode": 13,
           "title": "Grzechy ojca",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2543019,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757627024000,
+          "deleteAt": 1758231824000,
           "id": "1251",
           "parentId": "1040"
         },

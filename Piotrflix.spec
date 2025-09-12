@@ -1,7 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
-import glob
 from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
@@ -10,14 +9,17 @@ APP_NAME = "PiotrFlix"
 ENTRY    = "gui_main.py"
 ICON     = "static/icon.ico" if os.path.isfile("static/icon.ico") else None
 
-# wyklucz inne bindingi Qt (żeby nie było konfliktu z PySide6)
-EXCLUDES = ["PyQt5", "PyQt5.*", "PyQt6", "PyQt6.*"]
+# Wyklucz inne bindingi Qt (żeby nie biły się z PySide6)
+EXCLUDES = ["PyQt5", "PyQt5.*", "PyQt6", "PyQt6.*", "tkinter"]
 
 # ——— HIDDEN IMPORTS ———
-#  - 'app' bo ładujesz backend dynamicznie (importlib)
-#  - bs4/soupsieve, plexapi, selenium, libtorrent
+# - 'app' bo ładujesz backend dynamicznie (importlib)
+# - nowe moduły GUI: posters_gui, gui_main_apperance
+# - bs4/soupsieve, plexapi, selenium, libtorrent (jak wcześniej)
 HIDDEN = [
     "app",
+    "posters_gui",
+    "gui_main_apperance",
     "bs4",
     "soupsieve",
     "libtorrent",
@@ -40,7 +42,7 @@ DATAS = [
     ("static",    "static"),
 ]
 
-# pliki JSON/JS z katalogu głównego, które chcesz mieć w dist/
+# Dodatkowe pliki w głównym katalogu, które mają trafić do dist/
 for fn in [
     "available_cache.json",
     "poster_cache.json",
@@ -52,7 +54,7 @@ for fn in [
     if os.path.isfile(fn):
         DATAS.append((fn, "."))
 
-# dołóż updater.exe jeśli zbudowany
+# Dołóż updater.exe jeśli zbudowany
 if os.path.isfile("updater.exe"):
     DATAS.append(("updater.exe", "."))
 
@@ -77,7 +79,8 @@ a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
+    # noarchive=True → brak wspólnego archiwum .pyz, szybszy start w onedir
+    noarchive=True,
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
@@ -96,7 +99,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,               # GUI
+    console=False,               # GUI app
     icon=ICON,
 )
 

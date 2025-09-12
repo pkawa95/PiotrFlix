@@ -258,6 +258,7 @@ class UpdaterWorker(QtCore.QObject):
 
                 # 5) Podmiana plików w bieżącym folderze
                 self.status.emit("Podmiana plików…")
+                extracted_manifest = set()  # relatywne ścieżki z paczki (case-insensitive zbierzemy niżej)
                 try:
                     with zipfile.ZipFile(zip_path, "r") as z:
                         members = [m for m in z.infolist() if not m.is_dir()]
@@ -268,9 +269,10 @@ class UpdaterWorker(QtCore.QObject):
                             relpath = _norm(m.filename)
                             if top and relpath.startswith(top):
                                 relpath = relpath[len(top):]
-
                             if not relpath:
                                 continue
+
+                            extracted_manifest.add(relpath)  # zapamiętaj, co ma istnieć po update
 
                             dest = os.path.join(self.install_dir, relpath)
                             ensure_dir(os.path.dirname(dest))
@@ -281,18 +283,27 @@ class UpdaterWorker(QtCore.QObject):
 
                             # Nie podmieniaj aktywnego updatera (ani tego samego pliku pod inną nazwą)
                             dest_abs = os.path.abspath(dest)
-                            if self.self_path and os.path.samefile(dest_abs, self.self_path):
+                            try:
+                                same_as_self = self.self_path and os.path.exists(dest_abs) and os.path.samefile(dest_abs, self.self_path)
+                            except Exception:
+                                same_as_self = False
+
+                            if same_as_self:
                                 self.logline.emit(f"Pomijam plik aktualnie uruchomionego updatera: {dest_abs}")
                             else:
                                 try:
-                                    if os.path.isfile(dest):
-                                        if hashlib.sha256(open(dest, "rb").read()).hexdigest() == hashlib.sha256(data).hexdigest():
-                                            pass
-                                        else:
-                                            replace_file_atomic(dest, data)
-                                    else:
+                                    # jeśli plik nie istnieje → UTWÓRZ GO (Twoje wymaganie)
+                                    if not os.path.isfile(dest):
                                         replace_file_atomic(dest, data)
+                                    else:
+                                        # jeśli różni się sumą → podmień
+                                        old_h = hashlib.sha256(open(dest, "rb").read()).hexdigest()
+                                        new_h = hashlib.sha256(data).hexdigest()
+                                        if old_h != new_h:
+                                            replace_file_atomic(dest, data)
+                                        # jeśli identyczny, zostaw
                                 except Exception:
+                                    # fallback: spróbuj mimo wszystko (np. po restarcie)
                                     replace_file_atomic(dest, data)
 
                             # progres tej fazy
@@ -302,6 +313,59 @@ class UpdaterWorker(QtCore.QObject):
                 except Exception as e:
                     self.done.emit(False, f"Nie udało się podmienić plików: {e}")
                     return
+
+                # 5b) Czyszczenie nieużywanych plików + śmieci po aktualizacji
+                try:
+                    self.status.emit("Czyszczenie nieużywanych plików…")
+
+                    # manifest paczki – case-insensitive porównanie (Windows)
+                    manifest_lower = _lower_set(extracted_manifest)
+
+                    # pliki, których NIE WOLNO usuwać (nawet jeśli nie ma ich w nowej paczce)
+                    # - bieżący updater (self_path)
+                    # - plik wersji
+                    # - główny EXE (jeśli paczka go chwilowo nie zawiera)
+                    protected_abs = set()
+                    if self.self_path:
+                        protected_abs.add(os.path.abspath(self.self_path))
+                    protected_abs.add(os.path.abspath(LOCAL_VERSION_FILE))
+                    protected_abs.add(os.path.abspath(APP_EXE))
+
+                    # przejdź po wszystkich plikach w katalogu instalacji
+                    removed_count = 0
+                    for rel in list(_walk_files(self.install_dir)):
+                        # rel może być np. "static/logo.png"
+                        rel_norm = rel.replace("\\", "/")
+                        abs_p = os.path.join(self.install_dir, rel_norm)
+
+                        # pomin „chronione”
+                        try:
+                            if os.path.abspath(abs_p) in protected_abs:
+                                continue
+                        except Exception:
+                            pass
+
+                        # jeśli pliku nie ma w nowej paczce → USUŃ
+                        if rel_norm.lower() not in manifest_lower:
+                            try:
+                                os.remove(abs_p)
+                                removed_count += 1
+                            except Exception:
+                                # jeśli zablokowany, spróbuj po restarcie
+                                try:
+                                    _schedule_replace_on_reboot("", abs_p)
+                                except Exception:
+                                    pass
+
+                    # posprzątaj pliki tymczasowe, puste katalogi
+                    _cleanup_temp_patterns(self.install_dir, patterns=(".updtmp", ".tmp", ".partial"))
+                    _remove_empty_dirs(self.install_dir)
+
+                    self.logline.emit(f"Usunięte nieużywane pliki: {removed_count}")
+                except Exception as e:
+                    # Czyszczenie nie jest krytyczne – zaloguj i idź dalej
+                    self.logline.emit(f"Uwaga: problem podczas czyszczenia: {e}")
+
 
                 # 6) Zapisz nową wersję w tym folderze
                 try:
@@ -485,6 +549,36 @@ class UpdaterWindow(QtWidgets.QWidget):
 
     def _quit_now(self):
         QtWidgets.QApplication.instance().quit()
+
+
+# ───────────────────────────── UTIL: sprzątanie / manifest ──────────────────
+def _walk_files(root_dir: str):
+    """Zwraca relatywne ścieżki plików (z ukośnikami /)."""
+    for base, _dirs, files in os.walk(root_dir):
+        for name in files:
+            abs_p = os.path.join(base, name)
+            rel_p = os.path.relpath(abs_p, root_dir)
+            yield _norm(rel_p)
+
+def _lower_set(items):
+    return set((items or [])) if not items else set([i.lower() for i in items])
+
+def _remove_empty_dirs(root_dir: str):
+    """Usuwa puste katalogi od najgłębszych do korzenia."""
+    for base, dirs, files in os.walk(root_dir, topdown=False):
+        if not dirs and not files:
+            try:
+                os.rmdir(base)
+            except Exception:
+                pass
+
+def _cleanup_temp_patterns(root_dir: str, patterns=(".updtmp", ".tmp", ".partial")):
+    for rel in list(_walk_files(root_dir)):
+        if any(rel.lower().endswith(p) for p in patterns):
+            try:
+                os.remove(os.path.join(root_dir, rel))
+            except Exception:
+                pass
 
 # ───────────────────────────── MAIN ──────────────────────────────────────────
 def main():

@@ -1691,6 +1691,878 @@ def search_local():
     return jsonify({"films": films, "series": series})
 
 # ─────────────────────────────────────────────────────────────────────────────
+# PLEX CAST – RESUME + STABLE PROGRESS TIMING
+# ─────────────────────────────────────────────────────────────────────────────
+import time
+from flask import request, jsonify
+from plexapi.exceptions import NotFound
+from plexapi.video import Show, Episode, Movie
+
+# Zakładam, że masz już:
+# - app (Flask)
+# - get_plex_or_none()
+# - progress_log (logger)
+# Jeśli nazywają się inaczej – podmień importy/nazwy poniżej.
+
+# ── Pomocnicze: bezpieczne pobieranie liczbowych pól
+def _to_int(v, default=0):
+    try:
+        return int(v or 0)
+    except Exception:
+        return default
+
+def _safe_season(ep):
+    # seasonNumber bywa None; parentIndex jest stabilniejszy
+    return _to_int(getattr(ep, "seasonNumber", None) or getattr(ep, "parentIndex", None) or 0)
+
+def _safe_episode(ep):
+    return _to_int(getattr(ep, "index", None) or getattr(ep, "episodeIndex", None) or 0)
+
+def _find_client_by_id(plex, client_id: str, name_hint: str = ""):
+    """
+    Szuka klienta po machineIdentifier / clientIdentifier,
+    a jeśli się nie uda – próbuje po tytule (name_hint).
+    """
+    if plex is None:
+        return None
+
+    clients = list(plex.clients() or [])
+    if not clients:
+        return None
+
+    # 1) Dokładny match po ID
+    for c in clients:
+        mid = getattr(c, "machineIdentifier", "") or ""
+        cid = getattr(c, "clientIdentifier", "") or ""
+        if client_id and (client_id == mid or client_id == cid):
+            return c
+
+    # 2) Fallback po nazwie (jeśli przeszedł z frontu)
+    if name_hint:
+        for c in clients:
+            title = getattr(c, "title", "") or getattr(c, "product", "") or ""
+            if title.strip().lower() == name_hint.strip().lower():
+                return c
+
+    # 3) Nie znaleziono
+    return None
+
+def _proxy_client_through_server(client, plex):
+    """
+    Upewnia, że komendy do klienta idą przez PMS.
+    Zwraca *działający* obiekt klienta (nigdy None).
+    """
+    if client is None:
+        return None
+    try:
+        prox = getattr(client, "proxyThroughServer", None)
+        if callable(prox):
+            ret = prox()              # niektóre wersje zwracają self, inne None (in-place)
+            if ret is not None:
+                return ret
+            return client
+    except Exception as e:
+        try:
+            progress_log.warning("proxyThroughServer() failed: %s", e)
+        except Exception:
+            pass
+
+    # ręczny fallback — “podłącz” klienta do PMS
+    try:
+        client._server = plex
+        if hasattr(plex, "_baseurl"):
+            client._baseurl = plex._baseurl
+        elif hasattr(plex, "_baseurlorig"):
+            client._baseurl = plex._baseurlorig
+    except Exception as e:
+        try:
+            progress_log.warning("manual proxy fallback failed: %s", e)
+        except Exception:
+            pass
+    return client
+
+def _resolve_item_for_cast(plex, item_id: str):
+    """
+    Zwraca (plex_item, effective_item, meta)
+    - plex_item: oryginalny obiekt (Movie/Show/Episode)
+    - effective_item: co faktycznie zagramy (Movie/Episode)
+      (dla Show: pierwszy nieobejrzany / nieukończony odcinek,
+       a jeśli wszystko obejrzane – pierwszy odcinek serii)
+    - meta: dict z tytułem i plakatem
+    """
+    it = plex.fetchItem(int(item_id))
+    thumb_url = ""
+    try:
+        if getattr(it, "thumb", None):
+            thumb_url = plex.url(it.thumb)
+    except Exception:
+        pass
+
+    if isinstance(it, Movie):
+        return it, it, {"title": it.title, "thumb": thumb_url, "type": "movie", "item_id": str(it.ratingKey)}
+
+    if isinstance(it, Episode):
+        show_title = getattr(it, "grandparentTitle", "") or getattr(it, "parentTitle", "") or ""
+        s_no = _safe_season(it)
+        e_no = _safe_episode(it)
+        title = f"{show_title} – S{s_no:02d}E{e_no:02d} {it.title}"
+        return it, it, {"title": title, "thumb": thumb_url, "type": "episode", "item_id": str(it.ratingKey)}
+
+    if isinstance(it, Show):
+        eps = list(it.episodes() or [])
+        # spróbuj wybrać „następny” nieobejrzany / nieukończony
+        for ep in eps:
+            try:
+                dur = _to_int(getattr(ep, "duration", 0))
+                off = _to_int(getattr(ep, "viewOffset", 0))
+                viewed = bool(getattr(ep, "isWatched", False) or _to_int(getattr(ep, "viewCount", 0)) > 0)
+                if not viewed or (dur > 0 and off < int(dur * 0.98)):
+                    s_no = _safe_season(ep)
+                    e_no = _safe_episode(ep)
+                    thumb = plex.url(getattr(ep, "thumb", "") or getattr(it, "thumb", "") or "")
+                    title = f"{it.title} – S{s_no:02d}E{e_no:02d} {ep.title}"
+                    return it, ep, {"title": title, "thumb": thumb, "type": "show", "item_id": str(ep.ratingKey)}
+            except Exception:
+                continue
+        # wszystko obejrzane – weź pierwszy odcinek
+        if eps:
+            pick = eps[0]
+            s_no = _safe_season(pick)
+            e_no = _safe_episode(pick)
+            thumb = plex.url(getattr(pick, "thumb", "") or getattr(it, "thumb", "") or "")
+            title = f"{it.title} – S{s_no:02d}E{e_no:02d} {pick.title}"
+            return it, pick, {"title": title, "thumb": thumb, "type": "show", "item_id": str(pick.ratingKey)}
+        # fallback
+        return it, None, {"title": it.title, "thumb": thumb_url, "type": "show", "item_id": str(it.ratingKey)}
+
+    raise NotFound(f"Unsupported item type for cast: {type(it)}")
+
+def _compute_resume_offset_ms(playable):
+    """
+    Zwraca viewOffset (ms) dla Movie/Episode. Jeżeli brak – 0.
+    Z lekką otuliną bezpieczeństwa: jeśli offset zbyt blisko końca (>= 99.5%),
+    to wznawiamy minimalnie „przed końcem”, żeby klienci nie uznali za „ukończone”.
+    """
+    try:
+        # odśwież metadane (czasem plexapi buforuje)
+        try:
+            playable.reload()
+        except Exception:
+            pass
+
+        dur = _to_int(getattr(playable, "duration", 0))
+        off = _to_int(getattr(playable, "viewOffset", 0))
+
+        if dur > 0 and off > 0:
+            # cap do [0, dur)
+            off = max(0, min(off, max(0, dur - 1500)))  # nie startuj po samym końcu
+            return off
+        return 0
+    except Exception:
+        return 0
+
+@app.route("/plex/players")
+def plex_players():
+    plex = get_plex_or_none()
+    if plex is None:
+        return jsonify({"devices": [], "error": "plex_unavailable"}), 503
+    devices = []
+    for c in (plex.clients() or []):
+        devices.append({
+            "id": getattr(c, "machineIdentifier", "") or getattr(c, "clientIdentifier", ""),
+            "name": getattr(c, "title", "") or getattr(c, "product", "") or "Plex Client",
+            "product": getattr(c, "product", ""),
+            "platform": getattr(c, "platform", ""),
+            "address": getattr(c, "address", ""),
+        })
+    uniq = {d["id"]: d for d in devices if d["id"]}.values()
+    return jsonify({"devices": list(uniq)})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /plex/cast/start – „Plex-only resume (seek once at start)”
+# ─────────────────────────────────────────────────────────────────────────────
+import time
+from flask import request, jsonify
+from plexapi.exceptions import NotFound
+from plexapi.video import Movie, Episode
+from plexapi.playqueue import PlayQueue
+
+# parametr bezpieczeństwa: gdy offset jest „przy samym końcu”, cofnij o tyle ms
+RESUME_BACKOFF_MS = 1500     # zostaw ~1.5s marginesu na koniec
+RESUME_MIN_MS     = 2000     # nie rób resume, jeśli offset < 2s (traktuj jak brak postępu)
+
+def _to_int(v, default=0):
+    try:
+        return int(v if v is not None else 0)
+    except Exception:
+        return default
+
+def _fresh_view_offset_ms(playable):
+    """Pobiera aktualny viewOffset z Plexa na świeżo."""
+    try:
+        # odśwież metadane – żeby nie czytać z cache
+        playable.reload()
+    except Exception:
+        pass
+    dur = _to_int(getattr(playable, "duration", 0), 0)
+    off = _to_int(getattr(playable, "viewOffset", 0), 0)
+    if dur <= 0 or off <= 0:
+        return 0, dur
+    # jeśli offset zbyt blisko końca – przytnij
+    off = min(off, max(0, dur - RESUME_BACKOFF_MS))
+    # zbyt mały offset – ignorujemy
+    if off < RESUME_MIN_MS:
+        return 0, dur
+    return off, dur
+
+def _proxy_client_through_server(client, plex):
+    try:
+        prox = getattr(client, "proxyThroughServer", None)
+        if callable(prox):
+            ret = prox()
+            if ret is not None:
+                return ret
+    except Exception:
+        pass
+    try:
+        client._server = plex
+        if hasattr(plex, "_baseurl"):
+            client._baseurl = plex._baseurl
+        elif hasattr(plex, "_baseurlorig"):
+            client._baseurl = plex._baseurlorig
+    except Exception:
+        pass
+    return client
+
+def _find_client_by_id(plex, client_id: str, name_hint: str = ""):
+    if plex is None:
+        return None
+    clients = list(plex.clients() or [])
+    # po ID
+    for c in clients:
+        mid = getattr(c, "machineIdentifier", "") or ""
+        cid = getattr(c, "clientIdentifier", "") or ""
+        if client_id and (client_id == mid or client_id == cid):
+            return c
+    # po nazwie (opcjonalny hint)
+    if name_hint:
+        for c in clients:
+            title = getattr(c, "title", "") or getattr(c, "product", "") or ""
+            if title.strip().lower() == name_hint.strip().lower():
+                return c
+    return None
+
+def _resolve_item_for_cast(plex, item_id: str):
+    """Zwraca (playable, meta). playable = Movie/Episode (dla Show wybierz swój sposób wcześniej)."""
+    it = plex.fetchItem(int(item_id))
+    if isinstance(it, Movie):
+        meta = {"title": it.title, "thumb": plex.url(it.thumb) if getattr(it, "thumb", None) else "", "type": "movie", "item_id": str(it.ratingKey)}
+        return it, meta
+    if isinstance(it, Episode):
+        s = _to_int(getattr(it, "seasonNumber", None) or getattr(it, "parentIndex", None) or 0)
+        e = _to_int(getattr(it, "index", None) or getattr(it, "episodeIndex", None) or 0)
+        meta = {"title": f"{getattr(it,'grandparentTitle','') or getattr(it,'parentTitle','')} – S{s:02d}E{e:02d} {it.title}",
+                "thumb": plex.url(it.thumb) if getattr(it, "thumb", None) else "", "type": "episode", "item_id": str(it.ratingKey)}
+        return it, meta
+    # jeżeli ktoś poda ratingKey serialu (Show), możesz tu dopiąć wybór „następnego odcinka”
+    raise NotFound(f"Unsupported item type for cast: {type(it)}")
+
+def _wait_for_session_and_seek_once(plex, client, client_id: str, target_ms: int, tries=8, seek_retries=3):
+    """
+    Czeka aż pojawi się sesja na kliencie i JEDNORAZOWO wymusza seek do target_ms.
+    Nie powtarza później (żeby nie cofać widza). Zwraca dict z logiem prób.
+    """
+    attempts = []
+    # poczekaj do ~4s aż PMS widzi sesję
+    s = None
+    for i in range(tries):
+        time.sleep(0.5)
+        try:
+            for sess in (plex.sessions() or []):
+                for p in (getattr(sess, "players", []) or []):
+                    pid = getattr(p, "machineIdentifier", "") or getattr(p, "clientIdentifier", "")
+                    if pid == client_id:
+                        s = sess
+                        break
+                if s: break
+        except Exception:
+            pass
+        attempts.append({"phase": "wait_session", "try": i+1, "found": bool(s)})
+        if s:
+            break
+
+    # jeśli nie ma sesji – i tak spróbuj raz wymusić seek, część klientów „załapie” po chwili
+    if target_ms > 0:
+        # króciutka pauza na inicjację playera
+        time.sleep(0.6)
+        # zróbmy to: pause -> kilka seek → play (tylko raz teraz)
+        try:
+            client.pause()
+        except Exception:
+            pass
+        time.sleep(0.25)
+        for j in range(seek_retries):
+            ok = False
+            try:
+                client.seekTo(target_ms)
+                ok = True
+            except Exception:
+                try:
+                    client.sendCommand(f"playback/seekTo?offset={int(target_ms)}")
+                    ok = True
+                except Exception:
+                    ok = False
+            attempts.append({"phase": "seek_once", "try": j+1, "ok": ok})
+            time.sleep(0.2)
+        try:
+            client.play()
+        except Exception:
+            pass
+
+    # szybka weryfikacja (bez „poprawek” – pamiętaj: tylko na starcie!)
+    verified = False
+    s_off = None
+    try:
+        time.sleep(0.8)
+        for sess in (plex.sessions() or []):
+            for p in (getattr(sess, "players", []) or []):
+                pid = getattr(p, "machineIdentifier", "") or getattr(p, "clientIdentifier", "")
+                if pid == client_id:
+                    s = sess
+                    break
+            if s: break
+        if s:
+            s_off = _to_int(getattr(s, "viewOffset", 0), 0)
+            if target_ms > 0 and abs(s_off - target_ms) <= 2500:
+                verified = True
+    except Exception:
+        pass
+
+    return {"verified": verified, "session_offset_ms": s_off, "attempts": attempts}
+
+@app.route("/plex/cast/start", methods=["POST"])
+def plex_cast_start():
+    """
+    Start CAST:
+      1) pobierz *aktualny* viewOffset z Plexa dla itemu,
+      2) uruchom odtwarzanie,
+      3) JEDEN SEEK do offsetu (tylko na starcie), bez dalszych poprawek.
+    Dzięki temu nie cofamy użytkownika w trakcie oglądania.
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        item_id          = str(data.get("item_id") or "")
+        client_id        = str(data.get("client_id") or "")
+        client_name_hint = str(data.get("client_name") or "")
+
+        if not item_id or not client_id:
+            return jsonify({"error": "missing item_id/client_id"}), 400
+
+        plex = get_plex_or_none()
+        if plex is None:
+            return jsonify({"error": "plex_unavailable"}), 503
+
+        client = _find_client_by_id(plex, client_id, client_name_hint)
+        if client is None:
+            return jsonify({"error": "client_not_found"}), 404
+        client = _proxy_client_through_server(client, plex)
+
+        playable, meta = _resolve_item_for_cast(plex, item_id)
+
+        # 1) świeży progress z Plex
+        resume_ms, duration_ms = _fresh_view_offset_ms(playable)
+
+        # 2) start – offset podajemy już tutaj (część klientów go uszanuje)
+        try:
+            pq = PlayQueue.create(plex, playable)
+            client.playMedia(pq, offset=resume_ms)
+        except Exception:
+            client.playMedia(playable, offset=resume_ms)
+
+        # 3) jeden, inicjalny seek po pojawieniu się sesji (lub po krótkiej pauzie)
+        seek_log = _wait_for_session_and_seek_once(plex, client, client_id, resume_ms)
+
+        try:
+            progress_log.info(
+                "cast_start[plex-only]: title=%s resume_ms=%s dur_ms=%s verified=%s sess_off=%s",
+                meta.get("title"), resume_ms, duration_ms, seek_log.get("verified"), seek_log.get("session_offset_ms")
+            )
+        except Exception:
+            pass
+
+        return jsonify({
+            "ok": True,
+            "meta": meta,
+            "client": {"id": client_id, "name": getattr(client, "title", "")},
+            "resume_ms": resume_ms,
+            "duration_ms": duration_ms,
+            "strategy": "plex_only_seek_once",
+            "verification": seek_log
+        })
+
+    except Exception as e:
+        try:
+            progress_log.warning("plex_cast_start[plex-only] error: %s", e, exc_info=True)
+        except Exception:
+            pass
+        return jsonify({"error": f"cast_start_failed: {e}"}), 500
+
+
+
+@app.route("/plex/cast/status")
+def plex_cast_status():
+    """
+    Zwraca status bieżących sesji; filtrowanie po client_id opcjonalne.
+    Dodane pola:
+      - server_now_ms: czas serwera w ms (epoch)
+      - position_at_ms: kiedy (na serwerze) mierzony był view_offset_ms (tu ~= server_now_ms)
+    """
+    client_id = request.args.get("client_id", "").strip()
+    plex = get_plex_or_none()
+    if plex is None:
+        return jsonify({"sessions": [], "error": "plex_unavailable"}), 503
+
+    sessions_out = []
+    server_now_ms = int(time.time() * 1000)
+
+    try:
+        for s in (plex.sessions() or []):
+            players = getattr(s, "players", []) or []
+            for p in players:
+                pid = getattr(p, "machineIdentifier", "") or getattr(p, "clientIdentifier", "")
+                if client_id and pid != client_id:
+                    continue
+                title = getattr(s, "title", "") or getattr(s, "grandparentTitle", "")
+                thumb = ""
+                try:
+                    if getattr(s, "thumb", None):
+                        thumb = plex.url(s.thumb)
+                    elif getattr(s, "grandparentThumb", None):
+                        thumb = plex.url(s.grandparentThumb)
+                except Exception:
+                    pass
+                sessions_out.append({
+                    "client_id": pid,
+                    "client_name": getattr(p, "title", "") or getattr(p, "product", "") or "",
+                    "item_id": str(getattr(s, "ratingKey", "")),
+                    "title": title,
+                    "thumb": thumb,
+                    "duration_ms": _to_int(getattr(s, "duration", 0)),
+                    "view_offset_ms": _to_int(getattr(s, "viewOffset", 0)),
+                    "state": (getattr(p, "state", "") or "").lower() or "unknown",
+                    "type": getattr(s, "TYPE", ""),
+                    # 🆕 znaczniki czasu do stabilnej prognozy po stronie frontu
+                    "server_now_ms": server_now_ms,
+                    "position_at_ms": server_now_ms,  # w tym modelu offset = „teraz” na serwerze
+                })
+    except Exception as e:
+        try:
+            progress_log.warning("plex_cast_status error: %s", e)
+        except Exception:
+            pass
+        return jsonify({"sessions": [], "error": str(e)}), 500
+
+    return jsonify({"sessions": sessions_out})
+
+# ── twarde fallbacki na /player/playback/* dla krnąbrnych klientów
+def _playback_send(client, path):
+    """
+    Wyślij bezpośrednią komendę do klienta przez PMS.
+    path np. 'play', 'pause', 'stop', 'skipNext', 'skipPrevious', 'seekTo?offset=1234'
+    """
+    return client.sendCommand(f"playback/{path}")
+
+@app.route("/plex/cast/cmd", methods=["POST"])
+def plex_cast_cmd():
+    """
+    body: { client_id, cmd, seek_ms? }
+    cmd ∈ { "pause","play","stop","next","previous","seek" }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        client_id = str(data.get("client_id") or "")
+        cmd       = str(data.get("cmd") or "").lower()
+        seek_ms   = _to_int(data.get("seek_ms"), 0)
+
+        plex = get_plex_or_none()
+        if plex is None:
+            return jsonify({"error": "plex_unavailable"}), 503
+
+        client = _find_client_by_id(plex, client_id)
+        if client is None:
+            return jsonify({"error": "client_not_found"}), 404
+
+        client = _proxy_client_through_server(client, plex)
+
+        # 1) Spróbuj metod wysokiego poziomu
+        try:
+            if cmd == "pause":
+                client.pause()
+            elif cmd == "play":
+                client.play()
+            elif cmd == "stop":
+                client.stop()
+            elif cmd == "next":
+                client.skipNext()
+            elif cmd == "previous":
+                client.skipPrevious()
+            elif cmd == "seek":
+                client.seekTo(seek_ms)  # ms
+            else:
+                return jsonify({"error": "unknown_cmd"}), 400
+            return jsonify({"ok": True})
+        except Exception as e_high:
+            # 2) Fallback przez playback/* (bardziej niezawodne na niektórych klientach)
+            try:
+                if cmd == "pause":
+                    _playback_send(client, "pause")
+                elif cmd == "play":
+                    _playback_send(client, "play")
+                elif cmd == "stop":
+                    _playback_send(client, "stop")
+                elif cmd == "next":
+                    _playback_send(client, "skipNext")
+                elif cmd == "previous":
+                    _playback_send(client, "skipPrevious")
+                elif cmd == "seek":
+                    _playback_send(client, f"seekTo?offset={seek_ms}")
+                else:
+                    return jsonify({"error": "unknown_cmd"}), 400
+                return jsonify({"ok": True, "fallback": True})
+            except Exception as e_fb:
+                try:
+                    progress_log.warning("plex_cast_cmd failed: high=%s fallback=%s", e_high, e_fb)
+                except Exception:
+                    pass
+                return jsonify({"error": f"cmd_failed: {e_fb}"}), 500
+
+    except Exception as e:
+        try:
+            progress_log.warning("plex_cast_cmd error: %s", e)
+        except Exception:
+            pass
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TMDb: rozpoznawanie gatunków po tytule + zapis do progress_cache
+# ─────────────────────────────────────────────────────────────────────────────
+def detect_and_cache_genres_by_title(
+    title: str,
+    type_: str = "movie",
+    language: str = "pl-PL",
+    force_refresh: bool = False,
+    cache_ttl_days: int = 30,
+) -> list[str]:
+    """
+    Zwraca listę nazw gatunków dla podanego tytułu (film/serial) z TMDb.
+    - Wynik jest keszowany w progress_cache.json pod kluczem:
+        _genres_by_title[type_][normalized_title] = { genres, tmdb_id, ts }
+    - Jeżeli w progress_cache istnieją wpisy z tym tytułem, dopisze im pole "genres".
+    - Użyj type_ = "movie" lub "tv".
+
+    Parametry:
+      title         – tytuł do rozpoznania (np. "Gladiator")
+      type_         – "movie" lub "tv"
+      language      – język zapytań do TMDb (domyślnie "pl-PL")
+      force_refresh – gdy True pomija lokalny cache
+      cache_ttl_days– po tylu dniach cache jest traktowany jako przeterminowany
+
+    Zwraca:
+      list[str] – np. ["Dramat", "Akcja"]
+    """
+    if not title:
+        return []
+    type_ = (type_ or "movie").strip().lower()
+    endpoint = "movie" if type_ == "movie" else "tv"
+
+    def _norm(s: str) -> str:
+        return " ".join((s or "").strip().lower().split())
+
+    norm_title = _norm(title)
+    now_ms = int(time.time() * 1000)
+    ttl_ms = max(1, int(cache_ttl_days)) * 24 * 3600 * 1000
+
+    # 1) Sprawdź cache w progress_cache.json
+    with PROGRESS_LOCK:
+        store = _progress_load()
+        gcache = store.get("_genres_by_title") or {}
+        gcache_type = gcache.get(type_) or {}
+        cached = gcache_type.get(norm_title)
+
+    if cached and not force_refresh:
+        try:
+            if isinstance(cached, dict) and (now_ms - int(cached.get("ts", 0))) <= ttl_ms:
+                genres = list(cached.get("genres") or [])
+                if genres:
+                    return genres
+        except Exception:
+            pass  # poleci do odświeżenia
+
+    # 2) Zapytaj TMDb
+    try:
+        # search -> wybór najlepszego trafienia
+        r = requests.get(
+            f"https://api.themoviedb.org/3/search/{endpoint}",
+            params={"api_key": TMDB_API_KEY, "query": title, "language": language},
+            timeout=6,
+        )
+        r.raise_for_status()
+        data = r.json() or {}
+        results = data.get("results") or []
+        if not results:
+            # spróbuj jeszcze bez języka (czasem polskie tłumaczenia zawodzą)
+            r = requests.get(
+                f"https://api.themoviedb.org/3/search/{endpoint}",
+                params={"api_key": TMDB_API_KEY, "query": title},
+                timeout=6,
+            )
+            r.raise_for_status()
+            data = r.json() or {}
+            results = data.get("results") or []
+
+        if not results:
+            best = None
+        else:
+            # heurystyka wyboru: najpierw dokładne dopasowanie tytułu, potem najwyższa popularność
+            def _pop(x):
+                try: return float(x.get("popularity", 0) or 0)
+                except: return 0.0
+            exact = []
+            for it in results:
+                cand_titles = {
+                    _norm(it.get("title")),
+                    _norm(it.get("name")),
+                    _norm(it.get("original_title")),
+                    _norm(it.get("original_name")),
+                }
+                if norm_title in cand_titles:
+                    exact.append(it)
+            best = (sorted(exact, key=_pop, reverse=True)[0] if exact
+                    else sorted(results, key=_pop, reverse=True)[0])
+
+        if not best:
+            genres = []
+            tmdb_id = None
+        else:
+            tmdb_id = best.get("id")
+            # details -> pełne nazwy gatunków
+            d = requests.get(
+                f"https://api.themoviedb.org/3/{endpoint}/{tmdb_id}",
+                params={"api_key": TMDB_API_KEY, "language": language},
+                timeout=6,
+            ).json() or {}
+            genres = [g.get("name") for g in (d.get("genres") or []) if g.get("name")]
+    except Exception as e:
+        try:
+            progress_log.warning("TMDb genres fetch failed for %s (%s): %s", title, type_, e)
+        except Exception:
+            pass
+        genres = []
+        tmdb_id = None
+
+    # 3) Zapisz/odśwież cache oraz dopnij "genres" do wpisów z tym tytułem
+    try:
+        with PROGRESS_LOCK:
+            store = _progress_load()
+            gcache = store.get("_genres_by_title") or {}
+            gcache_type = gcache.get(type_) or {}
+
+            gcache_type[norm_title] = {
+                "genres": list(genres),
+                "tmdb_id": tmdb_id,
+                "ts": now_ms,
+                "title": title,
+            }
+            gcache[type_] = gcache_type
+            store["_genres_by_title"] = gcache
+
+            # dopnij "genres" do wpisów o tym samym tytule (case-insensitive)
+            updated_any = False
+            for k, v in list(store.items()):
+                if not isinstance(v, dict):
+                    continue
+                vt = (v.get("type") or "").lower()
+                if vt not in ("film", "movie", "series", "tv", "episode"):
+                    continue
+                vtitle = v.get("title")
+                if _norm(vtitle) == norm_title:
+                    # dla spójności: "movie"/"film" -> movie; "series"/"tv" -> tv
+                    if vt in ("film", "movie"):
+                        same_type = (type_ == "movie")
+                    elif vt in ("series", "tv"):
+                        same_type = (type_ == "tv")
+                    else:
+                        same_type = True  # epizod – też może dziedziczyć po tytule rodzica
+                    if same_type:
+                        if genres:
+                            v["genres"] = list(genres)
+                            store[k] = v
+                            updated_any = True
+
+            _progress_save(store)
+
+        try:
+            progress_log.info(
+                "Genres cached: title=%s type=%s tmdb_id=%s genres=%s",
+                title, type_, tmdb_id, ", ".join(genres) if genres else "-"
+            )
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            progress_log.warning("Genres cache write failed for %s: %s", title, e)
+        except Exception:
+            pass
+
+    return genres
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Backfill gatunków (TMDb) – endpointy i helpery
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _infer_tmdb_type_from_entry(entry: dict) -> str:
+    """Mapuje typ z cache na TMDb: film/movie -> movie, series/tv -> tv, episode -> tv."""
+    t = (entry.get("type") or "").lower()
+    if t in ("film", "movie"):
+        return "movie"
+    if t in ("series", "tv", "episode"):
+        return "tv"
+    # fallback: spróbuj po ścieżce
+    p = (entry.get("path") or "").lower()
+    if "/plex/seriale" in p or "\\plex\\seriale" in p:
+        return "tv"
+    return "movie"
+
+def _collect_titles_for_backfill(include_available: bool = True) -> list[tuple[str, str]]:
+    """
+    Zwraca listę (title, tmdb_type) do uzupełnienia.
+    Zbiera z progress_cache.json + (opcjonalnie) AvailableCache.
+    """
+    seen = set()
+    pairs: list[tuple[str, str]] = []
+
+    # 1) progress_cache.json
+    with PROGRESS_LOCK:
+        store = _progress_load()
+        for k, v in store.items():
+            if not isinstance(v, dict):
+                continue
+            title = (v.get("title") or "").strip()
+            if not title:
+                continue
+            tmdb_type = _infer_tmdb_type_from_entry(v)
+            key = (title.lower(), tmdb_type)
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append((title, tmdb_type))
+
+    # 2) available_cache (opcjonalnie)
+    if include_available:
+        try:
+            for it in available_cache.get_films():
+                title = (it.get("title") or "").strip()
+                if title:
+                    key = (title.lower(), "movie")
+                    if key not in seen:
+                        seen.add(key); pairs.append((title, "movie"))
+            for it in available_cache.get_series():
+                title = (it.get("title") or "").strip()
+                if title:
+                    key = (title.lower(), "tv")
+                    if key not in seen:
+                        seen.add(key); pairs.append((title, "tv"))
+        except Exception:
+            pass
+
+    return pairs
+
+def backfill_all_genres(force_refresh: bool = False, include_available: bool = True, limit: int | None = None) -> dict:
+    """
+    Uzupełnia gatunki dla wielu tytułów, zapisując do progress_cache.json.
+    Korzysta z detect_and_cache_genres_by_title(...).
+    Zwraca podsumowanie.
+    """
+    titles = _collect_titles_for_backfill(include_available=include_available)
+    if limit is not None:
+        titles = titles[:max(0, int(limit))]
+    done, empty, errors, samples = 0, 0, 0, []
+
+    for title, tmdb_type in titles:
+        try:
+            genres = detect_and_cache_genres_by_title(
+                title, type_=tmdb_type, force_refresh=force_refresh
+            )
+            if genres:
+                done += 1
+                if len(samples) < 10:
+                    samples.append({"title": title, "type": tmdb_type, "genres": genres})
+            else:
+                empty += 1
+        except Exception as e:
+            errors += 1
+            try:
+                progress_log.warning("Backfill genres failed for %s (%s): %s", title, tmdb_type, e)
+            except Exception:
+                pass
+
+        # niewielka pauza ochronna przed rate-limitami (TMDb bywa czułe)
+        time.sleep(0.15)
+
+    # po uzupełnieniu – przepisz deleteAt z override’ami na dostępne (jeśli chcesz spójność)
+    try:
+        available_cache.apply_overrides_from_progress()
+    except Exception:
+        pass
+
+    return {"processed": len(titles), "with_genres": done, "no_match": empty, "errors": errors, "sample": samples}
+
+# ── Endpoint: hurtowe uzupełnienie gatunków ─────────────────────────────────
+@app.route("/genres/backfill", methods=["GET"])
+def genres_backfill():
+    """
+    GET /genres/backfill?force=1&include_available=1&limit=200
+    """
+    force = str(request.args.get("force", "0")).lower() in {"1", "true", "yes", "y", "on"}
+    include_available = str(request.args.get("include_available", "1")).lower() in {"1", "true", "yes", "y", "on"}
+    lim = request.args.get("limit")
+    limit = int(lim) if (lim and lim.isdigit()) else None
+
+    summary = backfill_all_genres(force_refresh=force, include_available=include_available, limit=limit)
+    return jsonify({"ok": True, **summary})
+
+# ── Endpoint: uzupełnij gatunki dla konkretnego ID ──────────────────────────
+@app.route("/genres/for-id/<item_id>", methods=["GET"])
+def genres_for_id(item_id):
+    """
+    GET /genres/for-id/522
+    """
+    # 1) znajdź wpis po ID
+    with PROGRESS_LOCK:
+        store = _progress_load()
+        entry = store.get(str(item_id))
+    if not isinstance(entry, dict):
+        return jsonify({"ok": False, "error": "ID not found in progress_cache"}), 404
+
+    title = entry.get("title") or ""
+    tmdb_type = _infer_tmdb_type_from_entry(entry)
+    # 2) pobierz + zapisz gatunki
+    genres = detect_and_cache_genres_by_title(title, type_=tmdb_type)
+    # 3) pokaż wynik + aktualny snapshot wpisu
+    with PROGRESS_LOCK:
+        snapshot = _progress_load().get(str(item_id))
+    return jsonify({
+        "ok": True,
+        "id": item_id,
+        "title": title,
+        "type_tmdb": tmdb_type,
+        "genres": genres,
+        "entry_after": snapshot
+    })
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Pozostałe narzędzia Plex (reset timera, kasowanie)
 # ─────────────────────────────────────────────────────────────────────────────
 @app.route("/plex/reset-delete-timer", methods=["POST"])

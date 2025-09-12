@@ -32,6 +32,126 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
+
+/* ============ CAST: mini player + modal ============ */
+
+/* Ustal wysokość dolnego menu i luz nad nim */
+:root{
+  --cast-ui-height: 110px;
+  --nav-height: 64px;   /* wysokość #nav */
+  --cast-gap: 12px;     /* oddech nad #nav */
+}
+
+/* Mini-player zawsze ponad treścią i ponad nav */
+#cast-bar{
+  position: fixed;
+  left: 0; right: 0;
+  /* PODNIESIONY: siedzi nad #nav i bezpiecznym obszarem */
+  bottom: calc(var(--nav-height) + var(--cast-gap) + env(safe-area-inset-bottom));
+  display: none; align-items: center; gap: .9rem;
+  padding: .65rem .9rem;
+  background: var(--nav-bg-dark);
+  color: inherit; border-top: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 -8px 22px rgba(0,0,0,.35);
+  z-index: 1001; /* > #nav (który ma 999) */
+}
+body[data-theme="light"] #cast-bar{
+  background: var(--nav-bg-light);
+  border-top: 1px solid rgba(0,0,0,.06);
+  box-shadow: 0 -8px 16px rgba(0,0,0,.12);
+}
+
+/* Mobile: odrobinę większy margines nad nav (często wyższy) */
+@media (max-width: 600px){
+  :root{
+    --nav-height: 72px;  /* jeśli Twoje #nav jest wyższe, podnieś tu */
+    --cast-gap: 14px;
+  }
+  #cast-thumb{ width:52px; height:52px; }
+}
+
+/* (Opcjonalnie) Gdy player jest widoczny – dołóż miejsca pod treścią,
+   żeby nic nie chowało się pod paskiem mini-playera (działa w nowoczesnych przeglądarkach) */
+@supports selector(body:has(#cast-bar)){
+  body:has(#cast-bar[style*="display: flex"]) .container{
+    padding-bottom: calc(
+      max(7rem, 5rem) + var(--nav-height) + var(--cast-gap) + env(safe-area-inset-bottom)
+    );
+  }
+}
+
+/* Reszta bez zmian */
+#cast-thumb{
+  width: 56px; height: 56px; object-fit: cover; border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+}
+#cast-title{
+  font-weight: 800; font-size: .98rem; line-height: 1.2;
+  margin-bottom: .25rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  max-width: 44vw;
+}
+#cast-time{ font-variant-numeric: tabular-nums; opacity:.9; font-size:.9rem; }
+#cast-seek{
+  flex: 1 1 auto; width: 100%;
+  -webkit-appearance: none; appearance: none;
+  height: 8px; border-radius: 999px;
+  background: linear-gradient(180deg,#1b1b29,#131320);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+#cast-seek::-webkit-slider-thumb{
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow: 0 0 0 2px rgba(255,255,255,.25);
+  cursor: pointer;
+}
+#cast-seek::-moz-range-thumb{
+  width: 16px; height: 16px; border-radius: 50%;
+  background: linear-gradient(135deg,var(--accent),var(--accent-2));
+  border: 0; cursor: pointer;
+}
+.cast-controls{ display:flex; align-items:center; gap:.4rem; }
+.cast-controls button{
+  width: 38px; height: 38px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  color: inherit; border: var(--border-glass);
+  box-shadow: var(--shadow-card);
+  padding: 0; font-size: 1rem;
+}
+
+/* Modal wyboru urządzenia — bez zmian */
+#cast-modal{
+  position: fixed; inset: 0; display: none;
+  align-items: center; justify-content: center; z-index: 1002;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+}
+#cast-modal.show{ display: flex; }
+#cast-modal .modal-inner{
+  width: min(92vw, 440px);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  color: var(--color-dark);
+  padding: 1rem; border-radius: 16px; border: var(--border-glass);
+  box-shadow: var(--shadow-card);
+}
+body[data-theme="light"] #cast-modal .modal-inner{
+  background: var(--card-bg-light); color: var(--color-light);
+}
+#cast-devices{ margin:.6rem 0 .8rem; max-height: 50vh; overflow:auto; }
+.cast-device{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.6rem; padding:.6rem .7rem; border-radius: 12px;
+  border: var(--border-glass); margin-bottom:.5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  cursor: pointer;
+}
+.cast-device.selected{
+  outline: 2px solid rgba(0,240,255,.45); box-shadow: var(--glow-soft);
+}
+#cast-modal .actions{ display:flex; gap:.6rem; }
+#cast-confirm[disabled]{ opacity:.6; cursor:not-allowed; }
+
+
 /* ========== SERIALE v2 (desktop + mobile) ========== */
 #available-series{
   display:grid;
@@ -284,8 +404,8 @@ details.series-card[open] .series-caret{ transform:rotate(90deg); }
     color:white; border-bottom:2px solid white; box-shadow:var(--glow-strong) inset, var(--glow-soft);
   }
 
-  .available-tab-content{display:none;}
-  .available-tab-content.active{display:block;}
+.available-tab-content{ display:none !important; }
+.available-tab-content.active{ display:block !important; }
 
   /* ===== FIX 2: #torrent-tabs – 2 przyciski bez przewijania ===== */
   #torrent-tabs{
@@ -463,7 +583,7 @@ details.series-card[open] .series-caret{ transform:rotate(90deg); }
     margin-top: .1rem !important;
   }
   /* przycisk "Usuń teraz" – po lewej, pełna szerokość, styl danger */
-  #section-available .browse-result .result-content > div:last-child > button:last-of-type{
+  #section-available .browse-result .result-content > div:last-child > /*button:last-of-type */{
     grid-column: 1;
     width: 100%;
     padding: .5rem .9rem;
@@ -586,7 +706,7 @@ body[data-theme="dark"] select option{
       font-size: .9rem;
     }
     /* przycisk "Usuń teraz" – cały wiersz poniżej */
-    #section-available .browse-result:has([data-timer]) .result-content > div:last-child > button:last-of-type{
+    #section-available .browse-result:has([data-timer]) .result-content > div:last-child > /*button:last-of-type */{
       grid-row: 2; grid-column: 1;
       width: 100%;
       padding: .55rem .9rem;
@@ -647,7 +767,7 @@ body[data-theme="light"] #section-available [data-timer-id]{
 }
 
 /* === "Usuń teraz" — ten sam styl także na DESKTOP === */
-#section-available .browse-result .result-content > div:last-child > button:last-of-type,
+#section-available .browse-result .result-content > div:last-child > /*button:last-of-type */,
 #section-available .series-card .series-info > button{
   background: linear-gradient(135deg, #ff3b30 0%, #ff9500 92%) !important; /* danger */
   color: #fff !important;
@@ -1059,6 +1179,491 @@ body[data-theme="light"] #torrent-tabs{
   }
 }
 
+button[onclick^="confirmDelete("],
+.btn-danger {
+  background: linear-gradient(135deg, #ff3b30 0%, #ff9500 92%) !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 12px;
+  padding: .55rem 1rem;
+  font-weight: 800;
+  font-size: .95rem;
+  letter-spacing: .2px;
+  box-shadow: 0 8px 22px rgba(255,59,48,.28);
+  transition: transform .12s ease, filter .2s ease, box-shadow .2s ease;
+}
+button[onclick^="confirmDelete("]:hover,
+.btn-danger:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 10px 28px rgba(255,59,48,.36); }
+button[onclick^="confirmDelete("]:active,
+.btn-danger:active { transform: translateY(0); filter: brightness(.98); }
+
+/* (opcjonalnie) na mobile dalej pełna szerokość */
+@media (max-width: 600px){
+  button[onclick^="confirmDelete("] { width: 100%; }
+}
+
+.delete-btn, .btn-danger { /* ten sam blok jak powyżej */ }
+/* MOBILE: % obejrzane POD TYTUŁEM (nad paskiem) */
+@media (max-width: 600px){
+  /* standardowy układ kart filmu */
+  #section-available .browse-result .result-content{
+    display: grid !important;
+    grid-template-columns: 1fr auto; /* jak u Ciebie */
+    grid-template-areas:
+      "title title"
+      "percent percent"   /* <-- NOWY rząd */
+      "progress progress"
+      "actions actions";
+    gap: .45rem .6rem;
+  }
+
+  /* przypisanie obszarów */
+  #section-available .browse-result .result-content > b{        /* tytuł */
+    grid-area: title !important;
+  }
+  #section-available .browse-result .result-content > .progress-bar{
+    grid-area: progress !important;
+  }
+  #section-available .browse-result .result-content > div:last-child{
+    grid-area: actions !important;
+  }
+
+  /* SAM % – pokaż go i ustaw w nowym wierszu */
+  #section-available .browse-result .result-content > small{
+    grid-area: percent !important;
+    display: inline-block !important;   /* nadpisuje wcześniejsze "display:none" */
+    margin: .1rem 0 .2rem;
+    opacity: .9;
+    font-size: .9rem;
+    justify-self: start;                 /* lub center jeśli wolisz wyśrodkować */
+  }
+
+  /* wariant z timerem – też wstaw "percent" pod tytułem */
+  @supports selector(:has(*)){
+    #section-available .browse-result:has([data-timer]) .result-content{
+      grid-template-columns: 1fr !important;
+      grid-template-areas:
+        "title"
+        "percent"        /* <-- NOWY rząd */
+        "progress"
+        "actions";
+    }
+  }
+}
+
+
+
+/* Mobile: karty lżejsze (bez blur), przeglądarka renderuje tylko widoczne */
+@media (max-width: 600px){
+  .browse-result,
+  .series-card{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 6px 14px rgba(0,0,0,.25) !important; /* lżejszy cień */
+    content-visibility: auto;           /* maluj tylko to, co w viewport */
+    contain-intrinsic-size: 220px;      /* zapobiega skokom layoutu */
+  }
+}
+
+@media (max-width: 600px) {
+  #section-available .browse-result img {
+    width: 88px;          /* trochę większy */
+    aspect-ratio: 2 / 3;  /* zachowaj proporcje */
+    height: auto;         /* wyliczy się automatycznie */
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, .35);
+  }
+}
+
+/* Mobile: bardzo małe przyciski CAST i Usuń */
+@media (max-width: 600px){
+  #section-available .browse-result .result-content > div:last-child button{
+    padding: .25rem .45rem;   /* bardzo małe wnętrze */
+    font-size: .7rem;         /* mniejszy tekst */
+    line-height: 1.1;
+    border-radius: 8px;       /* mniejsze zaokrąglenie */
+    min-height: 32px;         /* zachowana klikalność */
+  }
+
+  /* Ikony też minimalne */
+  #section-available .browse-result .result-content > div:last-child button svg{
+    width: 14px;
+    height: 14px;
+    margin-right: .2rem;
+  }
+}
+
+/* Mobile: ściśnięte karty filmów */
+@media (max-width: 600px){
+  #section-available .browse-result{
+    padding: .6rem .7rem;       /* mniejszy padding w karcie */
+  }
+
+  #section-available .browse-result img{
+    width: 82px;                /* lekko mniejszy poster */
+    aspect-ratio: 2 / 3;
+    height: auto;
+    margin: 0;                  /* usuń dodatkowy odstęp */
+  }
+
+  #section-available .browse-result .result-content{
+    gap: .3rem .5rem;            /* ciaśniejsze przerwy w gridzie */
+  }
+
+  #section-available .browse-result .result-content > b{
+    margin-bottom: .1rem;        /* tytuł bliżej reszty */
+  }
+
+  #section-available .browse-result .result-content > small{
+    margin: .05rem 0 .15rem;     /* mniej przestrzeni wokół % obejrzane */
+  }
+
+  #section-available .browse-result .progress-bar{
+    margin: .1rem 0;             /* pasek bliżej innych elementów */
+  }
+
+  #section-available .browse-result .result-content > div:last-child{
+    margin-top: .2rem;           /* przyciski bliżej paska */
+  }
+}
+
+/* ===== GENRES ===== */
+
+/* Desktop: w prawym górnym rogu */
+.browse-result{ position: relative; }
+.genre-badges{
+  position: absolute;
+  top: 10px; right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  justify-content: flex-end;
+  max-width: 52%;
+  pointer-events: none;
+  z-index: 2;
+}
+.genre-badge{
+  pointer-events: auto;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .7rem;
+  line-height: 1;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  white-space: nowrap;
+  user-select: none;
+}
+body[data-theme="light"] .genre-badge{
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.genre-badge.is-generic{
+  background: linear-gradient(135deg,#6a6aff,#39d1ff);
+}
+@media (hover:hover){
+  .genre-badge:hover{
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    transition: filter .2s, transform .15s;
+  }
+}
+
+/* Mobile: malutkie kapsułki w jednej linii pod progress barem */
+@media (max-width:600px){
+  .genre-badges{
+    position: static;
+    margin-top: .3rem;
+    max-width: 100%;
+    justify-content: flex-start;
+    gap: .25rem;
+  }
+  .genre-badge{
+    font-size: .55rem;         /* naprawdę małe */
+    padding: .15rem .35rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+}
+details.series-card{ position: relative; }
+/* === SERIALE: badge pod paskiem progresu (zawsze) === */
+details.series-card { position: relative; }  /* tylko porządek */
+
+.series-card .genre-badges{
+  position: static !important;   /* nadpisuje wersję desktopową */
+  margin-top: .45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  justify-content: flex-start;
+  max-width: 100%;
+  pointer-events: auto;
+}
+
+.series-card .genre-badge{
+  padding: .3rem .6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .72rem;
+  line-height: 1;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  white-space: nowrap;
+}
+
+/* Na bardzo małych ekranach – jeszcze ciaśniej */
+@media (max-width: 600px){
+  .series-card .genre-badge{
+    font-size: .6rem;
+    padding: .18rem .42rem;
+  }
+}
+
+/* ===== RANDOMIZER: floating action button (FAB) ===== */
+#rand-fab{
+  position: fixed;
+  left: 14px;
+  bottom: calc(84px + env(safe-area-inset-bottom)); /* nad dolnym navem */
+  width: 60px; height: 60px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  font-size: 1.45rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%);
+  box-shadow: 0 12px 28px rgba(0,0,0,.35), var(--glow-strong);
+  border: var(--border-glass);
+  cursor: pointer;
+  z-index: 1003;
+}
+#rand-fab:active{ transform: translateY(1px) scale(.985); }
+
+@media (max-width: 600px){
+  #rand-fab{ width: 54px; height: 54px; font-size: 1.2rem; left: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); }
+}
+
+/* ===== RANDOMIZER: modal wyboru gatunków ===== */
+#rand-modal,
+#rand-result{
+  position: fixed; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+  z-index: 1004;
+}
+#rand-modal.show, #rand-result.show{ display: flex; }
+
+.rand-card{
+  width: min(92vw, 520px);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  color: var(--color-dark);
+  border: var(--border-glass);
+  box-shadow: var(--shadow-card), var(--glow-soft);
+  border-radius: 18px; padding: 1rem;
+}
+body[data-theme="light"] .rand-card{
+  background: var(--card-bg-light); color: var(--color-light);
+}
+
+.rand-title{ font-weight: 900; font-size: 1.2rem; margin: .25rem 0 .6rem; }
+.rand-actions{ display:flex; gap:.6rem; justify-content:flex-end; margin-top:.8rem; }
+
+/* lista gatunków */
+#rand-genres{
+  max-height: 54vh; overflow:auto;
+  display:grid; grid-template-columns: 1fr 1fr; gap:.4rem .8rem;
+  padding-right:.2rem;
+}
+@media (max-width: 520px){ #rand-genres{ grid-template-columns: 1fr; } }
+
+.rand-row{
+  display:flex; align-items:center; gap:.55rem;
+  padding:.45rem .55rem; border-radius:12px;
+  border: var(--border-glass);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+}
+.rand-row input{ width:18px; height:18px; }
+.rand-row label{ flex:1; font-weight:700; }
+
+/* przycisk „Losuj” */
+.rand-primary{
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 80%);
+  color:#fff; font-weight:900; border:none;
+  padding:.7rem 1.1rem; border-radius:12px;
+  box-shadow: var(--glow-strong);
+}
+
+/* ===== RANDOMIZER: modal wyniku ===== */
+.rand-result-inner{
+  width: min(92vw, 520px);
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+.rand-poster-wrap{
+  position: relative;
+  padding: 14px; border-radius: 18px; margin:.2rem 0 .6rem;
+  background: radial-gradient(120% 120% at 50% 10%, rgba(198,0,255,.18), rgba(0,0,0,.0)),
+              linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  border: var(--border-glass);
+  box-shadow: var(--glow-soft), 0 12px 32px rgba(0,0,0,.35);
+  animation: popIn .28s ease;
+}
+.rand-poster-wrap::after{
+  content:""; position:absolute; inset:0; border-radius:18px;
+  background: linear-gradient(120deg, rgba(255,255,255,.25), rgba(255,255,255,0) 40%);
+  mix-blend-mode: overlay; pointer-events:none;
+}
+.rand-poster{
+  width: 220px; aspect-ratio: 2/3; object-fit: cover;
+  display:block; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.35);
+}
+@keyframes popIn{ from{ transform:scale(.96); opacity:0 } to{ transform:scale(1); opacity:1 } }
+
+.rand-title-film{
+  font-weight: 900; font-size: 1.15rem; margin:.4rem 0 .8rem;
+}
+
+.rand-cta{ display:flex; gap:.6rem; flex-wrap:wrap; justify-content:center; }
+.rand-cta button{
+  padding:.65rem 1.1rem; border-radius:12px; font-weight:800; border:none;
+}
+.rand-cta .cast{ background: linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; box-shadow: var(--glow-strong); }
+.rand-cta .close{ background: linear-gradient(135deg, #555, #333); color:#fff; }
+body[data-theme="light"] .rand-cta .close{ background: linear-gradient(135deg, #e6e6e6, #cccccc); color:#000; }
+
+/* ===== RANDOMIZER: stan „rolling” (animacja losowania) ===== */
+#rand-result .rand-cta{ opacity:1; transition:opacity .2s ease; }
+#rand-result.rolling .rand-cta{ opacity:0; pointer-events:none; }
+
+#rand-rolling-hint{
+  margin-top:.25rem;
+  font-weight:800; font-size:.95rem; opacity:.9;
+}
+
+/* subtelna animacja „shake/tilt” plakatu podczas losowania */
+@keyframes randSpin {
+  0%   { transform: rotate(-2deg) scale(0.98); filter: blur(0px); }
+  25%  { transform: rotate(2deg)  scale(1.00); filter: blur(.4px); }
+  50%  { transform: rotate(-1.5deg) scale(0.99); filter: blur(.2px); }
+  75%  { transform: rotate(1.5deg) scale(1.00); filter: blur(.4px); }
+  100% { transform: rotate(0deg)  scale(1.00); filter: blur(0px); }
+}
+#rand-result.rolling .rand-poster-wrap{ animation: popIn .28s ease, randSpin .6s ease-in-out infinite; }
+
+/* awaryjne skalowanie na bardzo małych ekranach */
+@media (max-width: 360px){
+  .rand-poster{ width: 190px; }
+}
+
+/* domyślne położenie */
+#rand-fab{
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  transition: bottom .3s ease;
+}
+
+/* gdy player jest widoczny */
+body.cast-active #rand-fab{
+  bottom: calc(200px + env(safe-area-inset-bottom)); /* +~100px dla paska */
+}
+
+/* === L I V E S E A R C H  (wysuwany panel) === */
+/* FAB: wyszukiwarka 🔍 */
+#live-toggle{
+  position: fixed;
+  right: 14px;
+  /* ustaw bazę tak, żeby był nad kostką */
+  --lift-base: calc(150px + env(safe-area-inset-bottom));
+  bottom: var(--lift-base);
+  width: 54px; height: 54px; border-radius: 999px;
+  display: grid; place-items: center;
+  z-index: 1003;
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  color:#fff; font-size: 1.15rem; border: var(--border-glass);
+  box-shadow: 0 12px 28px rgba(0,0,0,.35), var(--glow-strong);
+  cursor: pointer; transition: bottom .3s ease, transform .12s ease;
+}
+#live-toggle:active{ transform: translateY(1px) scale(.985); }
+
+/* unoszenie nad castem */
+body.cast-active #live-toggle{
+  bottom: calc(var(--lift-base) + var(--cast-ui-height) + env(safe-area-inset-bottom));
+}
+
+
+#live-overlay{
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  backdrop-filter: blur(4px); display: none; z-index: 1003;
+}
+#live-overlay.show{ display:block; }
+
+#live-panel{
+  position: fixed; top: 0; right: 0; height: 100svh; width: min(92vw, 380px);
+  transform: translateX(100%); transition: transform .28s ease;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  color: var(--color-dark);
+  border-left: var(--border-glass); box-shadow: -10px 0 26px rgba(0,0,0,.35);
+  z-index: 1004; display: flex; flex-direction: column;
+}
+body[data-theme="light"] #live-panel{ background: var(--card-bg-light); color: var(--color-light); }
+
+#live-panel.show{ transform: translateX(0); }
+
+.live-head{
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  padding: .9rem; border-bottom: var(--border-glass);
+}
+.live-head b{ font-size:1.05rem; }
+
+.live-body{ padding:.9rem; overflow:auto; }
+
+#live-query{
+  width:100%; padding:.8rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  color:inherit; margin-bottom:.7rem; font-size:1rem;
+}
+body[data-theme="light"] #live-query{ border-color: rgba(0,0,0,.12); }
+
+.live-actions{
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem; margin:.4rem 0 .6rem;
+}
+
+#live-genres{
+  display:grid; grid-template-columns: 1fr 1fr; gap:.45rem .7rem;
+  max-height: 54vh; overflow:auto; padding-right: .2rem;
+}
+@media (max-width: 520px){ #live-genres{ grid-template-columns: 1fr; } }
+
+.live-row{
+  display:flex; align-items:center; gap:.55rem; padding:.45rem .55rem; border-radius:12px;
+  border: var(--border-glass);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+}
+.live-row input{ width:18px; height:18px; }
+.live-row label{ flex:1; font-weight:700; }
+
+.live-foot{
+  padding: .8rem .9rem; border-top: var(--border-glass);
+  font-size:.92rem; opacity:.9; display:flex; justify-content:space-between; gap:.6rem;
+}
+
+.hidden-live{ display:none !important; }
+/* ===== Uniwersalne unoszenie FAB-ów nad paskiem CAST ===== */
+:root{
+  /* wysokość paska CAST (wraz z oddechem); dopasuj w razie potrzeby */
+  --cast-ui-height: 110px;
+}
+
+/* Elementy, które mają się unosić: ustawiają własną bazę dołu przez --lift-base */
+.lift-with-cast{
+  position: fixed;                 /* zakładamy, że FAB-y są fixed */
+  transition: bottom .3s ease;
+  bottom: var(--lift-base, 84px);  /* domyślna baza jeśli nie podasz */
+}
+
+/* gdy CAST aktywny – dołóż wysokość playera */
+body.cast-active .lift-with-cast{
+  bottom: calc(var(--lift-base, 84px) + var(--cast-ui-height) + env(safe-area-inset-bottom));
+}
 
 
 </style>
@@ -1070,7 +1675,7 @@ body[data-theme="light"] #torrent-tabs{
 
   <div class="container">
     <div class="logo-container">
-      <div class="theme-toggle-container">
+      <div class="theme-toggle-container lift-with-cast" style="--lift-base: 7rem;">
   <label class="switch-label small">
     <input type="checkbox" id="theme-toggle" class="switch-input">
     <span class="switch-slider"></span>
@@ -1284,6 +1889,35 @@ body[data-theme="light"] #torrent-tabs{
     </div>
   </div>
 
+<!-- CAST: modal wyboru urządzenia -->
+<div id="cast-modal">
+  <div class="modal-inner">
+    <h3 style="margin:.2rem 0 .6rem;">Wybierz urządzenie do odtwarzania</h3>
+    <div id="cast-devices">Ładowanie…</div>
+    <div class="actions">
+      <button id="cast-confirm">▶️ Odtwarzaj tutaj</button>
+      <button id="cast-cancel" onclick="closeCastModal()">❌ Anuluj</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAST: mini pasek sterowania (mini-player) -->
+<div id="cast-bar">
+  <img id="cast-thumb" alt="poster" src="">
+  <div style="flex:1 1 auto; min-width: 0;">
+    <div id="cast-title">—</div>
+    <input id="cast-seek" type="range" min="0" max="1000" value="0" />
+    <div id="cast-time">00:00 / 00:00</div>
+  </div>
+  <div class="cast-controls">
+    <button id="cast-play" title="Odtwarzaj">▶️</button>
+    <button id="cast-pause" title="Pauza" style="display:none;">⏸️</button>
+    <button id="cast-stop" title="Stop">⏹️</button>
+  </div>
+</div>
+
+
+
   <!-- Toast powiadomienie -->
 <div id="toast" style="
   display: none;
@@ -1314,6 +1948,76 @@ body[data-theme="light"] #torrent-tabs{
 </div>
 
 
+<!-- FLOATING „LOSOWANIE” -->
+<button id="rand-fab" title="Losuj film 🎲">🎲</button>
+
+<!-- MODAL: wybór gatunków -->
+<div id="rand-modal">
+  <div class="rand-card">
+    <div class="rand-title">Losowanie filmu – wybierz gatunki</div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem;">
+      <label class="switch-label small" style="margin:0;">
+        <input type="checkbox" id="rand-select-all" class="switch-input">
+        <span class="switch-slider"></span>
+        <span style="font-weight:800; margin-left:.4rem;">Zaznacz wszystkie</span>
+      </label>
+      <small id="rand-status" style="opacity:.85;">Ładuję listę…</small>
+    </div>
+
+    <div id="rand-genres"></div>
+
+    <div class="rand-actions">
+      <button class="close" id="rand-cancel">Anuluj</button>
+      <button class="rand-primary" id="rand-go">🎲 Losuj</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: wylosowany film -->
+<div id="rand-result">
+  <div class="rand-card rand-result-inner">
+    <div class="rand-poster-wrap">
+      <img id="rand-poster" class="rand-poster" src="" alt="poster">
+    </div>
+    <div id="rand-title" class="rand-title-film">—</div>
+    <div id="rand-rolling-hint" style="display:none;">🎲 Losuję…</div> <!-- ⬅️ DODAJ TO -->
+    <div class="rand-cta">
+      <button class="cast" id="rand-cast">📺 CAST</button>
+      <button class="close" id="rand-close">❌ Zamknij</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB do wysuwania livesearcha -->
+<button id="live-toggle" class="lift-with-cast" title="Filtruj / wyszukaj">🔎</button>
+
+<!-- Overlay + panel -->
+<div id="live-overlay"></div>
+<aside id="live-panel" aria-hidden="true">
+  <div class="live-head">
+    <b>Wyszukaj</b>
+    <button id="live-close">✖</button>
+  </div>
+  <div class="live-body">
+    <input id="live-query" type="text" placeholder="Wpisz tytuł… (na żywo)" autocomplete="off" />
+
+    <div class="live-actions">
+      <label class="switch-label small" style="margin:0;">
+        <input type="checkbox" id="live-select-all" class="switch-input" checked>
+        <span class="switch-slider"></span>
+        <span style="font-weight:800; margin-left:.4rem;">Zaznacz wszystkie</span>
+      </label>
+      <small id="live-status" style="opacity:.85;">Ładuję gatunki…</small>
+    </div>
+
+    <div id="live-genres"></div>
+  </div>
+  <div class="live-foot">
+    <span id="live-count">Widoczne: —</span>
+    <button id="live-clear" class="reset-btn" type="button">Wyczyść</button>
+  </div>
+</aside>
 
 
 <!-- Skrypty -->
@@ -1350,11 +2054,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  window.showSection = function (name) {
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-    const section = document.getElementById(`section-${name}`);
-    if (section) section.classList.add("active");
-  };
+window.showSection = function (name) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  const section = document.getElementById(`section-${name}`);
+  if (section) section.classList.add("active");
+
+  // ⬇️ pokaż 🔎 tylko w "Dostępne"
+  const liveBtn = document.getElementById('live-toggle');
+  if (liveBtn) liveBtn.style.display = (name === 'available') ? 'grid' : 'none';
+};
+
 
   window.browseMovies = browseMovies;
   window.openModal = openModal;
@@ -1734,6 +2443,101 @@ async function loadTorrents() {
 }
 
 
+// ===== GENRES: cache + style map + render =====
+(() => {
+  // prościutki cache (id -> Promise<genres[]>), żeby nie spamować backendu
+  const _promises = new Map();
+  const _genresById = new Map();
+
+  // mapowanie PL/EN nazw na „klucz” (do stylu)
+  const norm = (g) => String(g||"").trim().toLowerCase()
+    .replace(/[śłóąężźćń]/g, c => ({'ś':'s','ł':'l','ó':'o','ą':'a','ę':'e','ż':'z','ź':'z','ć':'c','ń':'n'}[c]||c))
+    .replace(/\s+/g,'-');
+
+  // motywy kolorów (tło = gradient)
+  const STYLE = {
+    'horror':'linear-gradient(135deg,#0b0004,#ff2a2a)',
+    'komedia':'linear-gradient(135deg,#ffb300,#ff5a00)',
+    'comedy':'linear-gradient(135deg,#ffb300,#ff5a00)',
+    'akcja':'linear-gradient(135deg,#c600ff,#00f0ff)',
+    'action':'linear-gradient(135deg,#c600ff,#00f0ff)',
+    'dramat':'linear-gradient(135deg,#2b2c6f,#6a5acd)',
+    'drama':'linear-gradient(135deg,#2b2c6f,#6a5acd)',
+    'thriller':'linear-gradient(135deg,#1b1b1b,#7cff00)',
+    'sci-fi':'linear-gradient(135deg,#00e0ff,#00b894)',
+    'science-fiction':'linear-gradient(135deg,#00e0ff,#00b894)',
+    'fantasy':'linear-gradient(135deg,#6728ff,#00e0ff)',
+    'romans':'linear-gradient(135deg,#ff3d77,#ff7eb3)',
+    'romance':'linear-gradient(135deg,#ff3d77,#ff7eb3)',
+    'animacja':'linear-gradient(135deg,#ff6bd6,#ff9a3d)',
+    'animation':'linear-gradient(135deg,#ff6bd6,#ff9a3d)',
+    'kryminal':'linear-gradient(135deg,#0d0d15,#f5d000)',
+    'crime':'linear-gradient(135deg,#0d0d15,#f5d000)',
+    'dokument':'linear-gradient(135deg,#243949,#517fa4)',
+    'documentary':'linear-gradient(135deg,#243949,#517fa4)',
+    'familijny':'linear-gradient(135deg,#56ccf2,#2f80ed)',
+    'family':'linear-gradient(135deg,#56ccf2,#2f80ed)',
+    'wojenny':'linear-gradient(135deg,#3a6073,#16222a)',
+    'war':'linear-gradient(135deg,#3a6073,#16222a)',
+    'western':'linear-gradient(135deg,#a770ef,#fdb99b)',
+    'history':'linear-gradient(135deg,#8360c3,#2ebf91)',
+    'muzyka':'linear-gradient(135deg,#ff512f,#dd2476)',
+    'music':'linear-gradient(135deg,#ff512f,#dd2476)',
+    'mystery':'linear-gradient(135deg,#0f2027,#203a43)',
+    'przygodowy':'linear-gradient(135deg,#00b09b,#96c93d)',
+    'adventure':'linear-gradient(135deg,#00b09b,#96c93d)'
+  };
+
+  async function fetchGenresForId(id){
+    id = String(id);
+    if (_genresById.has(id)) return _genresById.get(id);
+    if (_promises.has(id)) return _promises.get(id);
+
+    const p = (async () => {
+      try{
+        const r = await fetch(`/genres/for-id/${encodeURIComponent(id)}`);
+        const j = await r.json();
+        const arr = Array.isArray(j.genres) ? j.genres : [];
+        _genresById.set(id, arr);
+        return arr;
+      }catch(_){
+        _genresById.set(id, []);
+        return [];
+      }finally{
+        _promises.delete(id);
+      }
+    })();
+
+    _promises.set(id, p);
+    return p;
+  }
+
+  function badgeEl(name){
+    const key = norm(name);
+    const bg = STYLE[key];
+    const span = document.createElement('span');
+    span.className = 'genre-badge' + (bg ? '' : ' is-generic');
+    span.textContent = name;
+    span.style.background = bg || 'linear-gradient(135deg,#6a6aff,#39d1ff)';
+    return span;
+  }
+
+  // publiczny renderer — wołaj z loadPlexFilms / loadPlexSeries
+  window.renderGenresBadges = async function(containerEl, filmId){
+    if (!containerEl || !filmId) return;
+    containerEl.innerHTML = '';
+    const genres = await fetchGenresForId(filmId);
+    if (!genres || !genres.length) return;
+    const frag = document.createDocumentFragment();
+    genres.forEach(g => frag.appendChild(badgeEl(String(g))));
+    containerEl.appendChild(frag);
+  };
+
+  // >>> to było przyczyną błędu — musi być wewnątrz IIFE
+  window.getGenresForId = fetchGenresForId;
+})();
+
+
   document.getElementById("global-speed-limit").addEventListener("change", function () {
   const limit = this.value;
   fetch("/set-global-limit", {
@@ -1816,7 +2620,7 @@ function deadlineForSeries(series) {
   return Number.isFinite(del) ? del : null; // dla seriali polegamy na deleteAt z backendu
 }
 
-// === 3) FILMY — render z poprawnym warunkiem 100% ===
+// === FILMY — desktop: badges w prawym górnym rogu; mobile: pod postępem ===
 async function loadPlexFilms() {
   const loader = document.getElementById("loading-message");
   const container = document.getElementById("available-films");
@@ -1827,8 +2631,16 @@ async function loadPlexFilms() {
 
   try {
     const res = await fetch("/plex/films");
-    const data = await res.json();
+    let data = await res.json();
     loader.style.display = "none";
+
+    // ⛑️ Asekuracja: odfiltruj rzeczy, które wyglądają na seriale
+    data = (Array.isArray(data) ? data : []).filter(f => {
+      const t = String(f.type || '').toLowerCase();
+      const looksLikeSeries = Array.isArray(f.episodes) && f.episodes.length > 0;
+      const isFilmType = (t === '' || t === 'film' || t === 'movie');
+      return isFilmType && !looksLikeSeries;
+    });
 
     data.forEach(film => {
       const deadline = deadlineForFilm(film); // null albo timestamp
@@ -1839,23 +2651,48 @@ async function loadPlexFilms() {
         <img src="${film.thumb || 'https://via.placeholder.com/100x150'}" />
         <div class="result-content">
           <b>${film.title}</b>
-          <div class="progress-bar"><div class="progress-bar-inner" style="width:${film.progress}%;"></div></div>
-          <small>${film.progress}% obejrzane</small>
 
-          <div style="margin-top:.5rem; text-align:right;">
-            <div style="font-size:.85rem; display:flex; justify-content:space-between; align-items:center;">
+          <div class="progress-bar">
+            <div class="progress-bar-inner" style="width:${Number(film.progress)||0}%;"></div>
+          </div>
+          <small>${Number(film.progress)||0}% obejrzane</small>
+
+          <!-- GENRES: w DOM od razu pod progress barem (mobile), na desktopie przeskoczą w róg -->
+          <div class="genre-badges" id="genres-${film.id}"></div>
+
+          <div style="margin-top:.6rem; display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; justify-content:space-between;">
+            <div style="font-size:.85rem; display:flex; align-items:center; gap:.5rem;">
               <span data-timer="${film.id}" ${deadline ? `data-target="${deadline}"` : ""}>
                 ${deadline ? getCountdown(deadline) : "–"}
               </span>
               ${deadline ? `<button class="reset-btn" onclick="resetDeleteTimer('${film.id}')">🔁 Resetuj</button>` : ""}
             </div>
-            <button onclick="confirmDelete('${film.id}', '${film.title}', 'film')">🗑️ Usuń teraz</button>
+
+            <div style="display:flex; gap:.5rem;">
+              <button onclick='openCastModalForItem(${JSON.stringify({ id:String(film.id), title:film.title })})'>📺 CAST</button>
+              <button onclick="confirmDelete('${film.id}', '${film.title}', 'film')">🗑️ Usuń teraz</button>
+            </div>
           </div>
         </div>
       `;
       container.appendChild(div);
+
+      // dla livesearcha
+      div.dataset.title = (film.title || '').toLowerCase();
+
+      // Badges gatunków
+      const badgeBox = div.querySelector(`#genres-${film.id}`);
+      if (badgeBox && typeof renderGenresBadges === "function") {
+        renderGenresBadges(badgeBox, film.id);
+      }
+
+      // data-genres (dla filtra bocznego)
+      if (typeof attachGenresData === "function") {
+        attachGenresData(div, film.id);
+      }
     });
 
+    // globalny loop odliczania
     ensureCountdownLoop();
   } catch (err) {
     loader.innerHTML = "❌ Błąd ładowania filmów.";
@@ -1863,7 +2700,9 @@ async function loadPlexFilms() {
   }
 }
 
+
 // === 4) SERIALE — analogicznie z warunkiem 100% ===
+// === SERIALE — badge gatunków tylko dla całego serialu ===
 async function loadPlexSeries(){
   const loader = document.getElementById("loading-message");
   const container = document.getElementById("available-series");
@@ -1879,15 +2718,17 @@ async function loadPlexSeries(){
 
     data.forEach(series => {
       const deadline = deadlineForSeries(series);
-      const seasons = computeSeasonStats(series.episodes || []);
+      const seasons  = computeSeasonStats(series.episodes || []);
+      const next     = nextEpisode(series.episodes || []);
 
       const chips = Object.entries(seasons)
-        .sort((a,b)=>Number(a[0])-Number(b[0]))
-        .map(([sn,st]) => `
+        .sort((a,b) => Number(a[0]) - Number(b[0]))
+        .map(([sn, st]) => `
           <div class="chip ${st.done===st.total && st.total>0 ? 'done':''}">
             <span class="num">Sezon ${sn}</span>
             <span class="meta">${st.done}/${st.total}</span>
-          </div>`).join("");
+          </div>
+        `).join("");
 
       const card = document.createElement("details");
       card.className = "series-card";
@@ -1896,19 +2737,33 @@ async function loadPlexSeries(){
           <img class="series-poster" src="${esc(series.thumb||'')}" alt="${esc(series.title)}">
           <div class="series-main">
             <h3 class="series-title">${esc(series.title)}</h3>
+
             <div class="series-progress">
-              <div class="bar"><div class="fill" style="width:${series.progress}%"></div></div>
-              <small>${series.progress}% obejrzane</small>
+              <div class="bar"><div class="fill" style="width:${Number(series.progress)||0}%"></div></div>
+              <small>${Number(series.progress)||0}% obejrzane</small>
             </div>
+
+            <!-- GENRES (SERIES): placeholder na badge
+                 - Desktop: będzie w prawym górnym rogu dzięki position:absolute (rodzic .series-card)
+                 - Mobile: pojawi się tutaj pod paskiem postępu, małe i obok siebie -->
+            <div class="genre-badges" id="genres-${series.id}"></div>
+
           </div>
           <div class="series-caret">›</div>
         </summary>
 
         <div class="series-timer">
+          ${next ? `
+            <button onclick='openCastModalForItem(
+              ${JSON.stringify({ id: String(next.id), title: episodeLabel(series,next), thumb: series.thumb || "" })}
+            )'>▶️ Odtwarzaj dalej</button>
+          ` : ``}
+
           ${deadline ? `
             <span data-timer-id="${series.id}" data-target="${deadline}">${getCountdown(deadline)}</span>
             <button class="reset-btn" onclick="event.stopPropagation(); resetDeleteTimer('${series.id}')">🔁 Resetuj</button>
           ` : ``}
+
           <button class="btn-danger" onclick="event.stopPropagation(); confirmDelete('${series.id}','${esc(series.title)}','series')">🗑️ Usuń</button>
         </div>
 
@@ -1924,7 +2779,12 @@ async function loadPlexSeries(){
                     ${ep.episode}. ${esc(ep.title)} — <b>${ep.progress}%</b>
                     <button style="font-size:.75rem; margin-left:10px;"
                       onclick="event.stopPropagation(); confirmDelete('${ep.id}','${esc(ep.title)}','episode')">🗑️</button>
-                  </li>`).join("")}
+                    <button style="font-size:.75rem; margin-left:10px;"
+                      onclick='event.stopPropagation(); openCastModalForItem(
+                        ${JSON.stringify({ id: String(ep.id), title: episodeLabel(series,ep), thumb: series.thumb || "" })}
+                      )'>📺</button>
+                  </li>
+                `).join("")}
               </ul>
             </details>
           `).join("")}
@@ -1932,14 +2792,22 @@ async function loadPlexSeries(){
       `;
 
       container.appendChild(card);
+
+      // === GENRES tylko dla całego serialu (po wstawieniu karty):
+      const badgeBox = card.querySelector(`#genres-${series.id}`);
+      if (badgeBox && typeof renderGenresBadges === "function") {
+        renderGenresBadges(badgeBox, series.id);
+      }
+      if (typeof attachGenresData === "function") attachGenresData(card, series.id);
     });
 
     ensureCountdownLoop();
-  }catch(e){
+  } catch(e){
     loader.innerHTML = "❌ Błąd ładowania seriali.";
     console.error(e);
   }
 }
+
 
 // === 5) Reset timera — natychmiast aktualizuje wszystkie kapsle tej pozycji ===
 async function resetDeleteTimer(id) {
@@ -2069,107 +2937,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ====== „Dostępne” — poprawna inicjalizacja zakładki po starcie ====== */
-document.addEventListener("DOMContentLoaded", () => {
-  // upewnij się, że handler zakładek już istnieje
-  const filmsTab = document.querySelector("#available-tabs [data-available-tab='films']");
-  const filmsPane = document.getElementById("available-films");
-  if (filmsTab && filmsPane) {
-    // ustaw widoki i od razu wczytaj filmy (klik mógł nie zadziałać wcześniej)
-    document.querySelectorAll("#available-tabs .search-tab").forEach(t => t.classList.remove("active"));
-    filmsTab.classList.add("active");
-    document.querySelectorAll(".available-tab-content").forEach(s => s.classList.remove("active"));
-    filmsPane.classList.add("active");
-    if (typeof loadPlexFilms === "function") loadPlexFilms();
-  }
-});
 
 /* ===== Helper do bezpiecznego cytowania w atrybutach JS ===== */
 function jsq(s){ return JSON.stringify(String(s ?? "")); }
 
-/* ====== loadPlexSeries – użyj #plex-series jeśli istnieje ====== */
-if (typeof loadPlexSeries === "function") {
-  const _originalLoadPlexSeries = loadPlexSeries;
-}
-window.loadPlexSeries = async function(){
-  const loader = document.getElementById("loading-message");
-  const container = document.getElementById("plex-series") || document.getElementById("available-series");
-  if (loader) loader.style.display = "block";
-  if (container) container.innerHTML = "";
 
-  try{
-    const res = await fetch("/plex/series");
-    const data = await res.json();
-    if (loader) loader.style.display = "none";
-
-    data.forEach(series => {
-      const deadline = (typeof deadlineForSeries === "function") ? deadlineForSeries(series) : null;
-
-      // zgrupuj odcinki po sezonach
-      const seasons = {};
-      (series.episodes || []).forEach(ep => (seasons[ep.season] ||= []).push(ep));
-
-      // karta
-      const det = document.createElement("details");
-      det.className = "series-card";
-
-      const thumb = series.thumb || 'https://via.placeholder.com/150x225?text=%20';
-      const head = `
-        <summary class="series-top">
-          <img class="series-poster" src="${thumb}" alt=${jsq(series.title)} loading="lazy" />
-          <div class="series-main">
-            <h3 class="series-title">${esc(series.title)}</h3>
-            <div class="series-progress">
-              <div class="bar"><div class="fill" style="width:${Number(series.progress)||0}%"></div></div>
-              <small>${Number(series.progress)||0}% obejrzane</small>
-            </div>
-          </div>
-          <div class="series-caret">›</div>
-        </summary>
-
-        <div class="series-timer">
-          ${
-            deadline
-              ? `
-                <span data-timer-id="${series.id}" data-target="${deadline}">${getCountdown(deadline)}</span>
-                <button class="reset-btn" onclick='event.stopPropagation(); resetDeleteTimer(${jsq(series.id)})'>🔁 Resetuj</button>
-              `
-              : ``
-          }
-          <button class="btn-danger" onclick='event.stopPropagation(); confirmDelete(${jsq(series.id)}, ${jsq(series.title)}, "series")'>🗑️ Usuń</button>
-        </div>
-      `;
-
-      let body = `<div class="series-seasons">`;
-      for (const [seasonNum, eps] of Object.entries(seasons)) {
-        body += `
-          <details>
-            <summary>📁 Sezon ${seasonNum}</summary>
-            <ul>
-              ${eps
-                .sort((a,b)=> (a.episode||0) - (b.episode||0))
-                .map(ep => `
-                  <li>
-                    ${ep.episode}. ${esc(ep.title)} — <b>${Number(ep.progress)||0}%</b>
-                    <button style="font-size:.75rem; margin-left:10px;"
-                      onclick='event.stopPropagation(); confirmDelete(${jsq(ep.id)}, ${jsq(ep.title)}, "episode")'>🗑️</button>
-                  </li>
-                `).join("")}
-            </ul>
-          </details>
-        `;
-      }
-      body += `</div>`;
-
-      det.innerHTML = head + body;
-      container.appendChild(det);
-    });
-
-    if (typeof ensureCountdownLoop === "function") ensureCountdownLoop();
-  }catch(e){
-    if (loader) loader.innerHTML = "❌ Błąd ładowania seriali.";
-    console.error(e);
-  }
-};
 
 /* ====== Potwierdzenie + kasowanie (film/serial/odcinek) ====== */
 function confirmDelete(id, title, type){
@@ -2246,7 +3018,844 @@ function esc(s){
     {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
   ));
 }
+
+/* ======================= POSTERS (cache z backendu) ======================= */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+const PosterCache = (() => {
+  const map = new Map(); // ratingKey (id) -> URL (nasza ścieżka lub gotowy thumb z backendu)
+  const norm = (u) => {
+    if (!u) return null;
+    const s = String(u).trim();
+    if (!s) return null;
+    if (s.startsWith('/')) return s;
+    if (/^https?:\/\//i.test(s)) return s;
+    return '/' + s.replace(/^\/+/, '');
+  };
+  const remember = (id, url) => { if (id!=null && url) map.set(String(id), norm(url)); };
+  return {
+    remember,
+    get: (id) => map.get(String(id)) || null,
+    preload: async () => {
+      try{
+        const [rf, rs] = await Promise.all([fetch('/plex/films'), fetch('/plex/series')]);
+        const films  = await rf.json();
+        const series = await rs.json();
+        if (Array.isArray(films)) films.forEach(f => remember(f.id, f.thumb));
+        if (Array.isArray(series)) {
+          series.forEach(s => {
+            remember(s.id, s.thumb);
+            (s.episodes||[]).forEach(ep => remember(ep.id, s.thumb)); // odcinek -> plakat serialu
+          });
+        }
+      }catch(_){}
+    }
+  };
+})();
+PosterCache.preload();
+
+async function attachCastPoster(imgEl, meta){
+  if (!imgEl) return;
+  const id    = String((meta && (meta.itemId || meta.id)) || "");
+  let thumb   = (meta && meta.thumb) ? String(meta.thumb) : "";
+
+  // preferuj nasz cache; jeśli brak, użyj meta.thumb
+  const cached = id ? PosterCache.get(id) : null;
+  const src = cached || thumb || "https://via.placeholder.com/92x92?text=%20";
+
+  imgEl.onerror = () => { imgEl.onerror=null; imgEl.src="https://via.placeholder.com/92x92?text=%20"; };
+  imgEl.src = src;
+}
+
+/* ======================= CAST – stan ======================= */
+window._cast = {
+  active:false, clientId:null, itemId:null,
+  title:"", thumb:"", durationMs:0, viewOffsetMs:0, state:"unknown",
+  pollTimer:null, userScrubbing:false,
+  lastServerNow:0, lastOffset:0
+};
+
+function msToClock(ms){
+  ms = Math.max(0, Number(ms)||0);
+  const s = Math.floor(ms/1000);
+  const hh = Math.floor(s/3600), mm = Math.floor((s%3600)/60), ss = s%60;
+  return (hh>0? `${hh}:${String(mm).padStart(2,'0')}`: `${mm}`) + `:${String(ss).padStart(2,'0')}`;
+}
+
+function showCastBar(meta){
+  const bar = document.getElementById('cast-bar');
+  const t   = document.getElementById('cast-title');
+  const img = document.getElementById('cast-thumb');
+
+  if (meta){
+    window._cast.title  = meta.title  || window._cast.title || 'Odtwarzanie';
+    window._cast.itemId = meta.itemId || window._cast.itemId;
+    window._cast.thumb  = meta.thumb  || window._cast.thumb || '';
+  }
+  if (t) t.textContent = window._cast.title || '—';
+
+  if (img) attachCastPoster(img, { itemId: window._cast.itemId, thumb: window._cast.thumb });
+
+  if (bar) bar.style.display = 'flex';
+  window._cast.active = true;
+  document.body.classList.add('cast-active');
+}
+
+function hideCastBar(){
+  const bar = document.getElementById('cast-bar');
+  if (bar) bar.style.display = 'none';
+  window._cast.active = false;
+  if (window._cast.pollTimer){ clearInterval(window._cast.pollTimer); window._cast.pollTimer=null; }
+  document.body.classList.remove('cast-active');
+}
+
+/* ======= HARD STOP: natychmiastowe zamknięcie playera ======= */
+async function hardStopCast(){
+  // optymistycznie schowaj UI i wyczyść stan
+  hideCastBar();
+  const cid = window._cast.clientId;
+  window._cast = {
+    active:false, clientId:null, itemId:null,
+    title:"", thumb:"", durationMs:0, viewOffsetMs:0, state:"stopped",
+    pollTimer:null, userScrubbing:false, lastServerNow:0, lastOffset:0
+  };
+  // spróbuj zatrzymać w tle (fire-and-forget)
+  if (cid){
+    try {
+      await fetch('/plex/cast/cmd', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ client_id: cid, cmd:'stop' })
+      });
+    } catch(_) {}
+  }
+}
+
+/* ======================= CAST – modal ======================= */
+let _castSelectedClient = null;
+
+async function openCastModalForItem(item){
+  _castSelectedClient = null;
+  const modal = document.getElementById('cast-modal');
+  const list  = document.getElementById('cast-devices');
+  const btn   = document.getElementById('cast-confirm');
+  if (btn) btn.disabled = true;
+
+  // ustaw meta, ALE nie pokazuj jeszcze mini-playera!
+  window._cast.itemId = String(item.id);
+  window._cast.title  = item.title;
+  window._cast.thumb  = item.thumb || "";
+  window._cast.state  = 'idle';
+
+  if (modal) {
+    modal.classList.add('show');
+    modal.style.removeProperty('display');
+  }
+  if (list) list.innerHTML = '🔄 Szukam urządzeń…';
+
+  try{
+    const res = await fetch('/plex/players');
+    const data = await res.json();
+    const devices = (data.devices||[]);
+    if (!devices.length){
+      if (list) list.innerHTML='❌ Brak klientów Plex.';
+      return;
+    }
+    if (list) list.innerHTML = '';
+    devices.forEach(d=>{
+      const row = document.createElement('div');
+      row.className = 'cast-device';
+      row.innerHTML = `<div>
+          <div style="font-weight:800">${esc(d.name||'Plex Client')}</div>
+          <div style="opacity:.8;font-size:.9rem">${esc(d.platform||'')}</div>
+        </div><div>✔️</div>`;
+      row.onclick = ()=>{
+        _castSelectedClient = d.id;
+        list.querySelectorAll('.cast-device').forEach(x=>x.classList.remove('selected'));
+        row.classList.add('selected');
+        if (btn) btn.disabled = false;
+      };
+      list.appendChild(row);
+    });
+    if (btn) btn.onclick = startCastOnSelected;
+  }catch(e){
+    if (list) list.innerHTML='❌ Błąd pobierania listy.';
+  }
+}
+
+function closeCastModal() {
+  const m = document.getElementById('cast-modal');
+  if (!m) return;
+  // 1) zdejmij klasę, 2) schowaj display
+  m.classList.remove('show');
+  m.style.display = 'none';
+
+  // jeśli nie ma aktywnego klienta (cast nie wystartował) — schowaj pasek
+  if (!window._cast.clientId) hideCastBar();
+  _castSelectedClient = null;
+}
+
+(function wireCastModalDismiss() {
+  const m = document.getElementById('cast-modal');
+  if (!m || m._wiredDismiss) return;
+  m._wiredDismiss = true;
+
+  // klik w overlay
+  m.addEventListener('click', (e) => {
+    if (e.target === m) closeCastModal();
+  });
+  // klawisz ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && m.classList.contains('show')) closeCastModal();
+  });
+})();
+
+/* ======= start cast po wyborze klienta ======= */
+async function startCastOnSelected() {
+  const btn = document.getElementById('cast-confirm');
+  if (!window._cast.itemId || !_castSelectedClient) return;
+
+  // jeżeli mamy zapisany offset z poprzedniej sesji — dołącz do startu
+  const resumeState = loadSavedCastState(window._cast.itemId);
+  const resume_ms   = resumeState?.view_offset_ms ?? null;
+
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Uruchamiam…'; }
+
+    const res = await fetch('/plex/cast/start', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        client_id: _castSelectedClient,
+        item_id  : window._cast.itemId,
+        ...(Number.isFinite(resume_ms) && resume_ms > 0 ? { resume_ms } : {})
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Start failed');
+
+    // zarejestruj sesję
+    window._cast.clientId = _castSelectedClient;
+    window._cast.state    = 'buffering';
+
+    // pokaż pasek dopiero PO udanym starcie:
+    showCastBar({ itemId: window._cast.itemId, title: window._cast.title, thumb: window._cast.thumb });
+    closeCastModal();     // <- teraz modal na pewno znika
+    startCastPolling();   // i zaczynamy odświeżanie stanu
+  } catch (err) {
+    alert('❌ Nie udało się uruchomić odtwarzania: ' + (err.message || err));
+    if (btn) { btn.disabled = false; btn.textContent = '▶️ Odtwarzaj tutaj'; }
+  }
+}
+
+/* ======================= CAST – UI + polling ======================= */
+function renderCastUI(){
+  const playBtn=document.getElementById('cast-play');
+  const pauseBtn=document.getElementById('cast-pause');
+  const seek=document.getElementById('cast-seek');
+  const time=document.getElementById('cast-time');
+
+  const st=(window._cast.state||'').toLowerCase();
+  const isPlaying=(st==='playing'||st==='buffering');
+
+  if(playBtn)  playBtn.style.display=isPlaying?'none':'';   // pokaż „Play” tylko gdy pauza
+  if(pauseBtn) pauseBtn.style.display=isPlaying?'':'none';  // pokaż „Pause” tylko gdy gra
+
+  let offset = Math.max(0, Number(window._cast.viewOffsetMs)||0);
+  const dur  = Math.max(0, Number(window._cast.durationMs)||0);
+
+  if (isPlaying && !window._cast.userScrubbing && window._cast.lastServerNow){
+    const delta = Date.now() - window._cast.lastServerNow;
+    if (Number.isFinite(delta) && delta >= 0) {
+      offset = Math.min(dur || Infinity, (window._cast.lastOffset||0) + delta);
+    }
+  }
+
+  if (seek && !window._cast.userScrubbing){
+    const max = dur>0 ? dur : 1000;
+    seek.max = max;
+    seek.value = Math.max(0, Math.min(max, offset));
+  }
+  if (time) time.textContent = `${msToClock(offset)} / ${msToClock(dur)}`;
+}
+
+async function pollCastOnce(){
+  if (!window._cast.clientId) return;
+  try{
+    const res=await fetch(`/plex/cast/status?client_id=${encodeURIComponent(window._cast.clientId)}`);
+    const data=await res.json();
+    if(!res.ok||data.error) return;
+
+    const s=(data.sessions||[])[0];
+    if(!s){
+      // brak sesji – nie chowamy od razu; UI można zamknąć przyciskiem Stop (hardStopCast)
+      window._cast.state = 'buffering';
+      renderCastUI();
+      return;
+    }
+
+    window._cast.itemId       = s.item_id || window._cast.itemId;
+    window._cast.title        = s.title   || window._cast.title;
+    window._cast.durationMs   = Number(s.duration_ms)||window._cast.durationMs||0;
+    window._cast.viewOffsetMs = Number(s.view_offset_ms)||0;
+    window._cast.lastOffset   = window._cast.viewOffsetMs;
+    window._cast.lastServerNow= Number(s.server_now_ms)||Date.now();
+    window._cast.state        = s.state || window._cast.state || 'unknown';
+
+    const cached = PosterCache.get(window._cast.itemId);
+    window._cast.thumb = cached || s.thumb || window._cast.thumb || '';
+
+    const t = document.getElementById('cast-title');
+    if (t && (t.textContent==='—' || !window._cast.active)){
+      showCastBar({title:window._cast.title, itemId:window._cast.itemId, thumb:window._cast.thumb});
+    }
+    const img = document.getElementById('cast-thumb');
+    if (img) attachCastPoster(img, { itemId: window._cast.itemId, thumb: window._cast.thumb });
+
+    renderCastUI();
+  }catch(_){}
+}
+
+function startCastPolling(){
+  if(window._cast.pollTimer) clearInterval(window._cast.pollTimer);
+  pollCastOnce();
+  window._cast.pollTimer=setInterval(pollCastOnce, 1500);
+}
+
+/* ======================= CAST – komendy ======================= */
+async function castCmd(cmd,argMs){
+  if(!window._cast.clientId && cmd!=='stop'){ return; }
+  if(cmd==='stop'){ return hardStopCast(); } // <— klucz: natychmiast chowamy
+
+  const body={client_id:window._cast.clientId,cmd};
+  if(cmd==='seek') body.seek_ms=Math.max(0,Number(argMs)||0);
+
+  if(cmd==='pause') window._cast.state='paused';
+  if(cmd==='play')  window._cast.state='playing';
+
+  renderCastUI();
+
+  try{
+    const res=await fetch('/plex/cast/cmd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok||data.error) console.warn('CAST cmd fail',cmd,data.error||res.status);
+    else setTimeout(pollCastOnce,500);
+  }catch(e){ console.warn('CAST cmd net err',cmd,e.message); }
+}
+
+/* ======================= Kontrolki mini-playera ======================= */
+(function bindCastControls(){
+  const play=document.getElementById('cast-play');
+  const pause=document.getElementById('cast-pause');
+  const stop=document.getElementById('cast-stop');
+  const seek=document.getElementById('cast-seek');
+
+  if(play)  play.onclick=()=>castCmd('play');
+  if(pause) pause.onclick=()=>castCmd('pause');
+  if(stop)  stop.onclick=hardStopCast; // <— natychmiastowe zamknięcie
+
+  if(seek){
+    seek.addEventListener('input',()=>{window._cast.userScrubbing=true;});
+    seek.addEventListener('change',()=>{ castCmd('seek', Number(seek.value)||0); window._cast.userScrubbing=false; });
+  }
+})();
+
+/* ======================= Auto-attach istniejącej sesji ======================= */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const res = await fetch('/plex/cast/status');
+    const data = await res.json();
+    const s = (data.sessions||[])[0];
+    if (!s) return;
+
+    window._cast.clientId     = s.client_id;
+    window._cast.itemId       = s.item_id;
+    window._cast.title        = s.title || '';
+    window._cast.durationMs   = Number(s.duration_ms)||0;
+    window._cast.viewOffsetMs = Number(s.view_offset_ms)||0;
+    window._cast.lastOffset   = window._cast.viewOffsetMs;
+    window._cast.lastServerNow= Number(s.server_now_ms)||Date.now();
+    window._cast.state        = s.state||'unknown';
+
+    const cached = PosterCache.get(window._cast.itemId);
+    window._cast.thumb = cached || s.thumb || '';
+
+    showCastBar({ title: window._cast.title, itemId: window._cast.itemId, thumb: window._cast.thumb });
+    startCastPolling();
+  }catch(_){}
+});
+
+function episodeLabel(series, ep){
+  const sNum = Number(ep.season ?? ep.season_number ?? 0);
+  const eNum = Number(ep.episode ?? ep.episode_number ?? 0);
+  const s = sNum > 0 ? String(sNum).padStart(2,'0') : '00';
+  const e = eNum > 0 ? String(eNum).padStart(2,'0') : '00';
+  const stitle = series?.title || '';
+  const etitle = ep?.title || '';
+  return `${stitle} S${s}E${e}${etitle ? ' — ' + etitle : ''}`;
+}
+
+function nextEpisode(episodes){
+  if (!Array.isArray(episodes)) return null;
+  // posortuj po sezonie/odcinku i weź pierwszy <100%
+  const list = episodes.slice().sort((a,b)=>{
+    const sa = Number(a.season||0), sb = Number(b.season||0);
+    if (sa !== sb) return sa - sb;
+    return Number(a.episode||0) - Number(b.episode||0);
+  });
+  return list.find(ep => (Number(ep.progress)||0) < 100) || null;
+}
+/* ====== Offset/Progress — zapisz na wyjściu, wznów na starcie ====== */
+
+/* Bieżący offset sesji, licząc płynnie od ostatniej odpowiedzi serwera */
+function currentCastOffsetMs() {
+  const dur = Math.max(0, Number(window._cast.durationMs) || 0);
+  let off   = Math.max(0, Number(window._cast.viewOffsetMs) || 0);
+
+  // jeżeli „gra”, dolicz czas od ostatniego ticka serwera
+  const st = String(window._cast.state || '').toLowerCase();
+  const playing = st === 'playing' || st === 'buffering';
+  if (playing && window._cast.lastServerNow && window._cast.lastOffset != null) {
+    const delta = Date.now() - window._cast.lastServerNow;
+    if (delta > 0) off = Math.min(dur || Infinity, (window._cast.lastOffset || 0) + delta);
+  }
+  return Math.min(off, dur || Infinity);
+}
+
+/* ——— trwałe zapisywanie do localStorage (per itemId) ——— */
+function saveCastStateLocally() {
+  if (!window._cast.itemId) return;
+  const key = 'piotrflix:cast:last';
+  const packed = {
+    item_id       : String(window._cast.itemId),
+    title         : window._cast.title || '',
+    view_offset_ms: Math.floor(currentCastOffsetMs()),
+    duration_ms   : Math.max(0, Number(window._cast.durationMs) || 0),
+    saved_at_ms   : Date.now()
+  };
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    all[packed.item_id] = packed;
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch (_) {}
+}
+
+function loadSavedCastState(itemId) {
+  const key = 'piotrflix:cast:last';
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    return all?.[String(itemId)] || null;
+  } catch (_) { return null; }
+}
+
+/* ——— szybki sync do backendu bez blokowania zamknięcia strony ——— */
+function beaconSyncCastOffset() {
+  if (!window._cast.clientId || !window._cast.itemId) return;
+  const payload = {
+    client_id     : window._cast.clientId,
+    item_id       : window._cast.itemId,
+    view_offset_ms: Math.floor(currentCastOffsetMs()),
+    duration_ms   : Math.max(0, Number(window._cast.durationMs) || 0),
+    state         : window._cast.state || 'unknown'
+  };
+  try {
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    // Na backendzie zaimplementuj lekkie przyjęcie, np. /plex/cast/sync (idempotentne)
+    navigator.sendBeacon?.('/plex/cast/sync', blob);
+  } catch (_) {}
+}
+
+/* ——— Hooki cyklu życia strony (działają na desktop/mobile) ——— */
+function installCastLifecycleGuards() {
+  // Gdy karta staje się niewidoczna — zapisz i wyślij offset
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveCastStateLocally();
+      beaconSyncCastOffset();
+    }
+  });
+
+  // Na iOS/Android Safari lepiej słuchać „pagehide”
+  window.addEventListener('pagehide', () => {
+    saveCastStateLocally();
+    beaconSyncCastOffset();
+  });
+
+  // Fallback dla desktopów
+  window.addEventListener('beforeunload', () => {
+    saveCastStateLocally();
+    beaconSyncCastOffset();
+  });
+}
+
+// Zainstaluj strażników po załadowaniu
+document.addEventListener('DOMContentLoaded', installCastLifecycleGuards);
+
+/* ——— Dodatkowo: gdy tylko dostaniemy status z serwera — aktualizuj localStorage ——— */
+const _origPollOnce = pollCastOnce;
+pollCastOnce = async function patchedPollCastOnce() {
+  await _origPollOnce();
+  // po udanym ticku mamy świeże lastOffset/lastServerNow — zapisz lokalnie
+  if (window._cast?.itemId) saveCastStateLocally();
+};
+
+/* ——— Na wejściu do strony: jeśli jest aktywna sesja, pokaż pasek i od razu zapisz stan ——— */
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/plex/cast/status');
+    const data = await res.json();
+    const s = (data.sessions || [])[0];
+    if (s) {
+      // (Twoja istniejąca logika inicjalizacji już to robi)
+      // dorzucamy tylko pewny save po starcie:
+      saveCastStateLocally();
+    }
+  } catch (_) {}
+});
+
+// ===== RANDOMIZER (Losowanie filmu po gatunkach, z animacją i bez 100%) =====
+(function(){
+  const fab       = document.getElementById('rand-fab');
+  const modal     = document.getElementById('rand-modal');
+  const listBox   = document.getElementById('rand-genres');
+  const selectAll = document.getElementById('rand-select-all');
+  const goBtn     = document.getElementById('rand-go');
+  const cancel    = document.getElementById('rand-cancel');
+  const statusEl  = document.getElementById('rand-status');
+
+  const resModal  = document.getElementById('rand-result');
+  const resPoster = document.getElementById('rand-poster');
+  const resTitle  = document.getElementById('rand-title');
+  const resCast   = document.getElementById('rand-cast');
+  const resClose  = document.getElementById('rand-close');
+  const rollingHint = document.getElementById('rand-rolling-hint');
+
+  if (!fab) return;
+
+  let filmsCache = null;     // [{id,title,thumb,progress}, ...]
+  let genresList = [];       // ["Horror","Comedy",...]
+
+  function openModal(){ modal.classList.add('show'); }
+  function closeModal(){ modal.classList.remove('show'); }
+  function openResult(){ resModal.classList.add('show'); }
+  function closeResult(){ resModal.classList.remove('show'); }
+
+  // unikalne gatunki z /plex/films
+  async function ensureGenresLoaded(){
+    if (genresList.length) return;
+
+    statusEl.textContent = "Ładuję listę…";
+    listBox.innerHTML = "";
+
+    // pobierz listę filmów raz
+    if (!filmsCache){
+      const r = await fetch('/plex/films');
+      filmsCache = await r.json();
+    }
+
+    const set = new Set();
+    await Promise.all(filmsCache.map(async f => {
+      try{
+        const gs = await window.getGenresForId(String(f.id));
+        gs.forEach(g => set.add(String(g)));
+      }catch(_){}
+    }));
+
+    genresList = Array.from(set).sort((a,b)=>a.localeCompare(b,'pl'));
+
+    const frag = document.createDocumentFragment();
+    genresList.forEach((g, idx) => {
+      const row = document.createElement('div');
+      row.className = 'rand-row';
+      row.innerHTML = `
+        <input type="checkbox" id="rg-${idx}" data-genre="${g}" checked>
+        <label for="rg-${idx}">${g}</label>
+      `;
+      frag.appendChild(row);
+    });
+    listBox.appendChild(frag);
+
+    statusEl.textContent = genresList.length ? `Gatunki: ${genresList.length}` : 'Brak danych';
+    selectAll.checked = true;
+  }
+
+  const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // UI helpers dla rolling
+  function setRollingUI(on) {
+    if (!resModal) return;
+    if (on) {
+      resModal.classList.add('rolling');
+      if (rollingHint) rollingHint.style.display = 'block';
+    } else {
+      resModal.classList.remove('rolling');
+      if (rollingHint) rollingHint.style.display = 'none';
+    }
+  }
+
+  fab.addEventListener('click', async () => {
+    try{ await ensureGenresLoaded(); }catch(_){}
+    openModal();
+  });
+
+  cancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e)=>{ if (e.target===modal) closeModal(); });
+
+  selectAll.addEventListener('change', () => {
+    listBox.querySelectorAll('input[type="checkbox"]').forEach(ch => ch.checked = selectAll.checked);
+  });
+
+  goBtn.addEventListener('click', async () => {
+    const chosen = new Set(
+      Array.from(listBox.querySelectorAll('input[type="checkbox"]:checked')).map(ch => ch.dataset.genre)
+    );
+    if (!chosen.size){
+      alert('Zaznacz przynajmniej jeden gatunek');
+      return;
+    }
+
+    // Kandydaci: film ma którykolwiek z wybranych gatunków + NIE 100% obejrzany
+    const candidates = [];
+    await Promise.all((filmsCache||[]).map(async f => {
+      try{
+        const prog = Number(f.progress) || 0;
+        if (prog >= 100) return; // pomijamy ukończone
+        const gs = await window.getGenresForId(String(f.id));
+        if (gs.some(g => chosen.has(String(g)))) candidates.push(f);
+      }catch(_){}
+    }));
+
+    if (!candidates.length){
+      alert('Brak filmów w wybranych gatunkach (nieukończonych w 100%).');
+      return;
+    }
+
+    // Rolling: pokaż modal wyniku w trybie „losuję…”
+    closeModal();
+    openResult();
+    setRollingUI(true);
+
+    // Zbuduj rotację plakatów (fallback na placeholder)
+    const thumbs = candidates.map(c => c.thumb || 'https://via.placeholder.com/220x330?text=Poster');
+    let idx = Math.floor(Math.random() * thumbs.length);
+    resPoster.src = thumbs[idx];
+    resTitle.textContent = 'Losuję…';
+
+    // Szybka wymiana plakatów co 120ms przez 2200ms
+    const tickMs = 120;
+    const totalMs = 2200;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      idx = (idx + 1) % thumbs.length;
+      resPoster.src = thumbs[idx];
+      elapsed += tickMs;
+      if (elapsed >= totalMs) {
+        clearInterval(timer);
+
+        // Finalny wybór
+        const picked = pickRandom(candidates);
+
+        // Wyświetl wynik
+        resPoster.src = picked.thumb || 'https://via.placeholder.com/220x330?text=Poster';
+        resPoster.onerror = () => { resPoster.src = 'https://via.placeholder.com/220x330?text=Poster'; };
+        resTitle.textContent = picked.title || '—';
+
+        // Włącz CTA
+        setRollingUI(false);
+
+        // CAST + Zamknij
+        resCast.onclick = () => {
+          try { openCastModalForItem({ id: String(picked.id), title: picked.title || '' }); } catch(_) {}
+          closeResult();
+        };
+        resClose.onclick = closeResult;
+        resModal.addEventListener('click', (e)=>{ if (e.target===resModal) closeResult(); }, { once:true });
+      }
+    }, tickMs);
+  });
+})();
+
+// ===== L I V E S E A R C H  (Dostępne: tytuł + gatunki) =====
+(function(){
+  const toggleBtn = document.getElementById('live-toggle');
+  const panel     = document.getElementById('live-panel');
+  const overlay   = document.getElementById('live-overlay');
+  const closeBtn  = document.getElementById('live-close');
+
+  const queryEl   = document.getElementById('live-query');
+  const selectAll = document.getElementById('live-select-all');
+  const statusEl  = document.getElementById('live-status');
+  const genresBox = document.getElementById('live-genres');
+  const countEl   = document.getElementById('live-count');
+  const clearBtn  = document.getElementById('live-clear');
+
+  if (!toggleBtn) return;
+
+  const C_FILMS  = document.getElementById('available-films');
+  const C_SERIES = document.getElementById('available-series');
+
+  let films   = null; // /plex/films
+  let series  = null; // /plex/series
+  let allGenres = []; // posortowana lista unikalnych
+  let isReady   = false;
+
+  function openPanel(){
+    panel.classList.add('show'); overlay.classList.add('show');
+    panel.setAttribute('aria-hidden','false');
+    queryEl?.focus();
+  }
+  function closePanel(){
+    panel.classList.remove('show'); overlay.classList.remove('show');
+    panel.setAttribute('aria-hidden','true');
+  }
+
+  // Debounce
+  function debounce(fn, ms=120){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+  // Zbierz unikalne gatunki ze wszystkich pozycji (filmy+seriale)
+  async function buildGenresIndex(){
+    statusEl.textContent = "Ładuję gatunki…";
+    if (!films){ const rf = await fetch('/plex/films'); films = await rf.json(); }
+    if (!series){ const rs = await fetch('/plex/series'); series = await rs.json(); }
+
+    const set = new Set();
+    const toFetch = [
+      ...films.map(x => String(x.id)),
+      ...series.map(x => String(x.id)),
+    ];
+
+    // równolegle, ale upraszczamy błąd
+    await Promise.all(toFetch.map(async id => {
+      try{
+        const gs = await window.getGenresForId(id);
+        (gs||[]).forEach(g => set.add(String(g)));
+      }catch(_){}
+    }));
+
+    allGenres = Array.from(set).sort((a,b)=>a.localeCompare(b,'pl'));
+    renderGenreCheckboxes(allGenres);
+    statusEl.textContent = `Gatunki: ${allGenres.length}`;
+    isReady = true;
+  }
+
+  function renderGenreCheckboxes(list){
+    genresBox.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    list.forEach((g,i)=>{
+      const row = document.createElement('div');
+      row.className = 'live-row';
+      row.innerHTML = `
+        <input type="checkbox" id="lg-${i}" data-genre="${g}" checked>
+        <label for="lg-${i}">${g}</label>
+      `;
+      frag.appendChild(row);
+    });
+    genresBox.appendChild(frag);
+    selectAll.checked = true;
+  }
+
+  // POBIERZ ATRYBUTY z kart (tytuł + gatunki)
+  function readCardData(el){
+    const title = (el.dataset.title || el.querySelector('b, .series-title')?.textContent || '').toLowerCase();
+    const gsStr = (el.dataset.genres || '');
+    const gs = gsStr ? gsStr.split('|') : [];
+    return { title, genres: gs };
+  }
+
+  // Zastosuj filtr do wszystkich kart
+  function applyFilter(){
+    const q = (queryEl.value || '').trim().toLowerCase();
+    const selected = new Set(
+      Array.from(genresBox.querySelectorAll('input[type="checkbox"]:checked')).map(ch => ch.dataset.genre.toLowerCase())
+    );
+    const genreFilterOn = selected.size > 0 && selected.size < allGenres.length;
+
+    let visible = 0;
+
+    // FILMY
+    if (C_FILMS){
+      C_FILMS.querySelectorAll('.browse-result').forEach(el=>{
+        const { title, genres } = readCardData(el);
+        const qOk = !q || title.includes(q);
+        const gOk = !genreFilterOn || genres.some(g => selected.has(g.toLowerCase()));
+        const show = qOk && gOk;
+        el.classList.toggle('hidden-live', !show);
+        if (show) visible++;
+      });
+    }
+
+    // SERIALE (tylko karty seriali, nie odcinki)
+    if (C_SERIES){
+      C_SERIES.querySelectorAll('.series-card').forEach(el=>{
+        const { title, genres } = readCardData(el);
+        const qOk = !q || title.includes(q);
+        const gOk = !genreFilterOn || genres.some(g => selected.has(g.toLowerCase()));
+        const show = qOk && gOk;
+        el.classList.toggle('hidden-live', !show);
+        if (show) visible++;
+      });
+    }
+
+    if (countEl) countEl.textContent = `Widoczne: ${visible}`;
+  }
+
+  // Zdarzenia UI
+  toggleBtn.addEventListener('click', async ()=>{
+    if (!isReady){
+      try { await buildGenresIndex(); } catch(_){}
+    }
+    openPanel();
+    applyFilter(); // policz widoczne na starcie
+  });
+  closeBtn.addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+
+  queryEl.addEventListener('input', debounce(applyFilter, 90));
+  selectAll.addEventListener('change', ()=>{
+    const on = selectAll.checked;
+    genresBox.querySelectorAll('input[type="checkbox"]').forEach(ch => ch.checked = on);
+    applyFilter();
+  });
+  genresBox.addEventListener('change', debounce(applyFilter, 60));
+
+  clearBtn.addEventListener('click', ()=>{
+    queryEl.value = '';
+    selectAll.checked = true;
+    genresBox.querySelectorAll('input[type="checkbox"]').forEach(ch => ch.checked = true);
+    applyFilter();
+  });
+
+  // ===== integracja: gdy karty się tworzą, dołóż data-* atrybuty =====
+  // helper do ustawienia data-genres po renderze badge’y
+  window.attachGenresData = async function(elCard, itemId){
+    try{
+      const gs = await window.getGenresForId(String(itemId));
+      // zapis w elemencie kontenera karty (do filtrowania)
+      const holder = elCard; // dla filmów: .browse-result, dla seriali: .series-card
+      if (holder){
+        const norm = s => String(s||'').trim().toLowerCase();
+        holder.dataset.genres = (gs||[]).map(norm).join('|');
+      }
+    }catch(_){}
+  };
+
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const liveBtn = document.getElementById('live-toggle');
+  if (!liveBtn) return;
+
+  // jeśli startujesz na "Torrenty", schowaj; jeśli ktoś zmieni – showSection to ogarnie
+  const isAvailActive = document.getElementById('section-available')?.classList.contains('active');
+  liveBtn.style.display = isAvailActive ? 'grid' : 'none';
+});
+
+
 </script>
+
+
+
 
 
 

@@ -4,30 +4,10 @@
       "id": "2291",
       "title": "Ballerina. Z uniwersum Johna Wicka",
       "thumb": "/static/posters/3c5ada283d0208b7b2a3f9a3cbcef0606793b31d.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
+      "progress": 100,
+      "watchedAt": 1757876430000,
+      "deleteAt": 1758481230000,
       "path": "/mch/Plex/Filmy/Ballerina (2025) [1080p] [BluRay] [5.1] [YTS.MX]/Ballerina.2025.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
-      "type": "film"
-    },
-    {
-      "id": "522",
-      "title": "Beetlejuice Beetlejuice",
-      "thumb": "/static/posters/b8bbcf852b91df401fb9d619237582ecfa8eb7c8.jpg",
-      "progress": 100,
-      "watchedAt": 1757592096000,
-      "deleteAt": 1758196896000,
-      "path": "/mch/Plex/Filmy/Beetlejuice Beetlejuice (2024) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.MX]/Beetlejuice.Beetlejuice.2024.1080p.WEBRip.x265.10bit.AAC5.1-[YTS.MX].mp4",
-      "type": "film"
-    },
-    {
-      "id": "805",
-      "title": "Belle",
-      "thumb": "/static/posters/6c1ee13cd5759b3c03d257d682df707a4541540d.jpg",
-      "progress": 100,
-      "watchedAt": 1757453835000,
-      "deleteAt": 1758114373911,
-      "path": "/mch/Plex/Filmy/Belle The Dragon And The Freckled Princess (2021) [720p] [BluRay] [YTS.MX]/Belle.The.Dragon.And.The.Freckled.Princess.2021.720p.BluRay.x264.AAC-[YTS.MX].mp4",
       "type": "film"
     },
     {
@@ -311,16 +291,6 @@
       "type": "film"
     },
     {
-      "id": "2223",
-      "title": "House on Eden",
-      "thumb": "/static/posters/31c4a2dc3c2a2d474d3d9117604b8d727bf1c55b.jpg",
-      "progress": 100,
-      "watchedAt": 1757603132000,
-      "deleteAt": 1758207932000,
-      "path": "/mch/Plex/Filmy/House On Eden (2025) [1080p] [WEBRip] [5.1] [YTS.MX]/House.On.Eden.2025.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
-      "type": "film"
-    },
-    {
       "id": "2316",
       "title": "Inni",
       "thumb": "/static/posters/02fd21ea4afed687b4f8ac9c3e328e6a8ebab28e.jpg",
@@ -411,6 +381,16 @@
       "type": "film"
     },
     {
+      "id": "2387",
+      "title": "Koszmar minionego lata",
+      "thumb": "/static/posters/3e720156987d91439ed71b9768f0410379a631c8.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/I Know What You Did Last Summer (2025) [1080p] [WEBRip] [5.1] [YTS.MX]/I.Know.What.You.Did.Last.Summer.2025.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
       "id": "601",
       "title": "Koszmar z Ulicy Wiązów",
       "thumb": "/static/posters/e21ac7e9d6c926be8651089e8776c094600eb25a.jpg",
@@ -474,9 +454,9 @@
       "id": "830",
       "title": "Mała syrenka",
       "thumb": "/static/posters/b7ddbacc4b888bea84c3c612905251d5dd328d14.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
+      "progress": 100,
+      "watchedAt": 1758230366000,
+      "deleteAt": 1758835166000,
       "path": "/mch/Plex/Filmy/The Little Mermaid (2023) [720p] [BluRay] [YTS.MX]/The.Little.Mermaid.2023.720p.BluRay.x264.AAC-[YTS.MX].mp4",
       "type": "film"
     },
@@ -611,16 +591,6 @@
       "type": "film"
     },
     {
-      "id": "1985",
-      "title": "Oddaj ją",
-      "thumb": "/static/posters/ab774f8668dad6d2d3e2b2b5205c2f60bfdec937.jpg",
-      "progress": 100,
-      "watchedAt": 1757359148000,
-      "deleteAt": 1758023961362,
-      "path": "/mch/Plex/Filmy/Bring.Her.Back.2025.1080p.WEB-DL.DDP5.1.x265-NeoNoir.mkv",
-      "type": "film"
-    },
-    {
       "id": "1690",
       "title": "The Offering",
       "thumb": "/static/posters/96b99865cea1eac3547abbe6bcda3742155011e3.jpg",
@@ -701,16 +671,6 @@
       "type": "film"
     },
     {
-      "id": "1467",
-      "title": "Oszukać przeznaczenie: Więzy krwi",
-      "thumb": "/static/posters/ee9d5c8c4e23629098ad52020ad90780c23053b6.jpg",
-      "progress": 0,
-      "watchedAt": null,
-      "deleteAt": null,
-      "path": "/mch/Plex/Filmy/Final Destination Bloodlines 2025 1080p HDRip HEVC x265-RMTeam.mkv",
-      "type": "film"
-    },
-    {
       "id": "1946",
       "title": "Pan Magoo",
       "thumb": "/static/posters/7f003b09ccb4253a87bc881e1163f8fbabebb0a2.jpg",
@@ -738,16 +698,6 @@
       "watchedAt": null,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Paranormal Activity 2 (2010) [1080p] [BluRay] [5.1] [YTS.MX]/Paranormal.Activity.2.2010.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
-      "type": "film"
-    },
-    {
-      "id": "642",
-      "title": "Paranormal Activity 3",
-      "thumb": "/static/posters/5bf44518f5d230d15bc34e7e69c289473dac5ecd.jpg",
-      "progress": 39.8,
-      "watchedAt": 1757530672000,
-      "deleteAt": null,
-      "path": "/mch/Plex/Filmy/Paranormal Activity 3 (2011) [1080p] [BluRay] [5.1] [YTS.MX]/Paranormal.Activity.3.2011.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     },
     {
@@ -781,6 +731,66 @@
       "type": "film"
     },
     {
+      "id": "2355",
+      "title": "Piła",
+      "thumb": "/static/posters/b252aabb7f326de6427e2bbc87b67f2aad51a63f.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW I UNRATED (2004) [1080p]/Saw.I.UNRATED.2004.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2372",
+      "title": "Piła 3D",
+      "thumb": "/static/posters/a29f9161bd3f46fca0debe4a23f9c51b0c29677c.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW VII The Final Chapter UNRATED (2010) [1080p]/Saw.VII.The.Final.Chapter.UNRATED.2010.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2354",
+      "title": "Piła II",
+      "thumb": "/static/posters/62594805668607b9d5fa5fe9164b4644cee3a38e.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW II UNRATED (2005) [1080p]/Saw.II.UNRATED.2005.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2365",
+      "title": "Piła III",
+      "thumb": "/static/posters/0a507893676db1192c16944ddc1f3792df4afdc7.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW III UNRATED (2006) [1080p]/Saw.III.UNRATED.2006.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2356",
+      "title": "Piła V",
+      "thumb": "/static/posters/16fb3b68fcd9e46a81aad5e74b7949ac7829bb25.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW V UNRATED (2008) [1080p]/Saw.V.UNRATED.2008.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
+      "id": "2364",
+      "title": "Piła VI",
+      "thumb": "/static/posters/acdc597198bba8bcd98ba31cb1b63b75e1d15f70.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/SAW VI UNRATED (2009) [1080p]/Saw.VI.UNRATED.2009.1080p.BRrip.x264.YIFY.mp4",
+      "type": "film"
+    },
+    {
       "id": "554",
       "title": "Piła X",
       "thumb": "/static/posters/57d67e871af8b24019314f1747fa05b1cd0a8dae.jpg",
@@ -788,6 +798,16 @@
       "watchedAt": null,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/Saw X (2023) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.MX]/Saw.X.2023.1080p.WEBRip.x265.10bit.AAC5.1-[YTS.MX].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2376",
+      "title": "Piła: Dziedzictwo",
+      "thumb": "/static/posters/b5d1b55c043eaf247735d07b395964b923ef01d2.jpg",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/Jigsaw.2017.2160p.UHD.BluRay.X265-IAMABLE/Jigsaw.2017.2160p.UHD.BluRay.X265-IAMABLE.mkv",
       "type": "film"
     },
     {
@@ -838,6 +858,16 @@
       "watchedAt": null,
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/The Ring Two (2005) [BluRay] [1080p] [YTS.AM]/The.Ring.Two.2005.1080p.BluRay.x264-[YTS.AM].mp4",
+      "type": "film"
+    },
+    {
+      "id": "2388",
+      "title": "Rytuał",
+      "thumb": "http://192.168.1.224:32400/library/metadata/2388/thumb/1757729112",
+      "progress": 0,
+      "watchedAt": null,
+      "deleteAt": null,
+      "path": "/mch/Plex/Filmy/The Ritual (2025) [1080p] [BluRay] [5.1] [YTS.MX]/The.Ritual.2025.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
     },
     {
@@ -1009,16 +1039,6 @@
       "deleteAt": null,
       "path": "/mch/Plex/Filmy/The Descent Part 2 (2009) [1080p] [BluRay] [5.1] [YTS.MX]/The.Descent.Part.2.2009.1080p.BluRay.x264.AAC5.1-[YTS.MX].mp4",
       "type": "film"
-    },
-    {
-      "id": "2216",
-      "title": "Zniknięcia",
-      "thumb": "/static/posters/54c3992505aac1dc29f7c8f6ff174a92b5d83dd8.jpg",
-      "progress": 100,
-      "watchedAt": 1757588488000,
-      "deleteAt": 1758193288000,
-      "path": "/mch/Plex/Filmy/Weapons (2025) [1080p] [WEBRip] [5.1] [YTS.MX]/Weapons.2025.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4",
-      "type": "film"
     }
   ],
   "series": [
@@ -1026,8 +1046,8 @@
       "id": "1040",
       "title": "Arrow",
       "thumb": "/static/posters/066ccd48a354941a705349bfc66459076e4e6386.jpg",
-      "progress": 48,
-      "watchedAt": 1757627024000,
+      "progress": 54,
+      "watchedAt": 1758136880000,
       "deleteAt": null,
       "episodes": [
         {
@@ -2018,11 +2038,11 @@
           "season": 4,
           "episode": 14,
           "title": "Zmowa milczenia",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2548191,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757879245000,
+          "deleteAt": 1758484045000,
           "id": "1252",
           "parentId": "1040"
         },
@@ -2030,11 +2050,11 @@
           "season": 4,
           "episode": 15,
           "title": "Uprowadzony",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2547541,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757881792000,
+          "deleteAt": 1758486592000,
           "id": "1253",
           "parentId": "1040"
         },
@@ -2042,11 +2062,11 @@
           "season": 4,
           "episode": 16,
           "title": "Złamane serca",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2543728,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757964269000,
+          "deleteAt": 1758569069000,
           "id": "1254",
           "parentId": "1040"
         },
@@ -2054,11 +2074,11 @@
           "season": 4,
           "episode": 17,
           "title": "Światło nadziei",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2535877,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1757966804000,
+          "deleteAt": 1758571604000,
           "id": "1255",
           "parentId": "1040"
         },
@@ -2066,11 +2086,11 @@
           "season": 4,
           "episode": 18,
           "title": "11:59",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2544854,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758048358000,
+          "deleteAt": 1758653158000,
           "id": "1256",
           "parentId": "1040"
         },
@@ -2078,11 +2098,11 @@
           "season": 4,
           "episode": 19,
           "title": "Płacz kanarka",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2489130,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758050953000,
+          "deleteAt": 1758655753000,
           "id": "1257",
           "parentId": "1040"
         },
@@ -2090,11 +2110,11 @@
           "season": 4,
           "episode": 20,
           "title": "Genesis",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2507525,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758053477000,
+          "deleteAt": 1758658277000,
           "id": "1258",
           "parentId": "1040"
         },
@@ -2102,11 +2122,11 @@
           "season": 4,
           "episode": 21,
           "title": "Monument Point",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2521998,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758131765000,
+          "deleteAt": 1758736565000,
           "id": "1259",
           "parentId": "1040"
         },
@@ -2114,11 +2134,11 @@
           "season": 4,
           "episode": 22,
           "title": "Lost in the Flood",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2522499,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758134306000,
+          "deleteAt": 1758739106000,
           "id": "1260",
           "parentId": "1040"
         },
@@ -2126,11 +2146,11 @@
           "season": 4,
           "episode": 23,
           "title": "Rozłam",
-          "progress": 0,
+          "progress": 100,
           "durationMs": 2545021,
           "viewOffsetMs": 0,
-          "watchedAt": null,
-          "deleteAt": null,
+          "watchedAt": 1758136880000,
+          "deleteAt": 1758741680000,
           "id": "1261",
           "parentId": "1040"
         },
